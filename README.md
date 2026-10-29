@@ -150,7 +150,7 @@ Issues and PRs that improve reliability, docs, and open-weight paths are welcome
 
 ## Source lineage
 
-Standalone application extracted from Ad Studio work that began in the open-higgsfield collaboration. Publication snapshot source commit: **`78b42e3fade76f1123f578e63883c6eea0e048c4`** (`release/final-rc-20261029`). See [NOTICE](NOTICE).
+Standalone application extracted from Ad Studio work that began in the open-higgsfield collaboration. RC source commit: **`78b42e3`**. Public release commit: **`755bab8`**. See [NOTICE](NOTICE).
 
 ---
 
