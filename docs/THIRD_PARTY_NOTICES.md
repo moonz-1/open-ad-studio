@@ -1,5 +1,3 @@
-> Release follow-up: main `a689e5c` was freshly installed and its lockfile licenses rechecked on October 28. Existing attribution remains; final image assets and any additional segmentation model/node need owner review. See [current readiness](RELEASE_READINESS.md).
-
 # Third-party notices
 
 Application code originated in the MIT-licensed Ad Studio/shared portions of `dvsll/open-higgsfield`, source revision `d041f02c7dcbbbc4362947b152a14efc0dd3069b`. Retain the exact `Copyright (c) 2026 open-higgsfield contributors` notice in LICENSE. Upstream shared-runtime contributions remain credited; this extraction does not claim sole authorship. The correction commit also credits Cursor as a co-author. See its [source record](https://github.com/dvsll/open-higgsfield/commit/d041f02c7dcbbbc4362947b152a14efc0dd3069b).
@@ -24,9 +22,13 @@ Audit tooling only: Node.js 22.20.0 (MIT plus bundled notices) and Playwright 1.
 
 ## Images, audio, trademarks and workflows
 
-The four tracked PNGs are the Field Study illustration/example and three UI review screenshots. They have no PNG text/EXIF metadata. The source attribution is Content Pixie / Unsplash photo `cq1zGLQIFyA`; the general [Unsplash license](https://unsplash.com/license) permits modified commercial use/distribution. The exact photo page returned HTTP 401 during this audit, so the historic attribution remains the provenance record rather than a new independent source match. Field Study is fictional. The MIT license does not relicense that image; retain [its credit](../adstudio/assets/README.md).
+This repository does **not** redistribute product photography, customer images,
+generated advertisements, or sample campaign PNGs. Users supply their own
+authorized media at runtime. See `adstudio/assets/README.md`.
 
-No private customer photos, MP4s, music or model weights were found in tracked files/history. Company/product names appearing in historical test notes are not endorsements or blanket trademark permissions. Future demo assets and soundtracks require owner authorization recorded in the submission packet.
+No private customer photos, MP4s, music or model weights are tracked. Company or
+product names appearing in tests or historical notes are not endorsements or
+blanket trademark permissions.
 
 Native Comfy workflows are supplied with SDK input/output contracts. The historical Qwen benchmark includes the Comfy Org workflow MIT notice in `adstudio/benchmark/QWEN_WORKFLOW_LICENSE.txt`. The LTX benchmark license file applies to its upstream model/materials and does not relicense the whole application. No partner inference node was found in the shipped workflow graphs.
 
@@ -34,7 +36,7 @@ Optional Stable Audio notice (applies when enabled): Powered by Stability AI. Th
 
 ## Integrated workflow-template attribution
 
-The tracked FLUX template and derived API graphs originate from [Comfy-Org/workflow_templates](https://github.com/Comfy-Org/workflow_templates), under its [MIT license](https://github.com/Comfy-Org/workflow_templates/blob/main/LICENSE). The copyright and permission text are retained in shared/workflows/LICENSE-Comfy-workflow-templates.txt. This code/template license does not change the FLUX model license. No template sample portrait is bundled as a customer reference. Current RC evidence supersedes historical pending-integration statements: see RC_ACCEPTANCE.md.
+The tracked FLUX template and derived API graphs originate from [Comfy-Org/workflow_templates](https://github.com/Comfy-Org/workflow_templates), under its [MIT license](https://github.com/Comfy-Org/workflow_templates/blob/main/LICENSE). The copyright and permission text are retained in shared/workflows/LICENSE-Comfy-workflow-templates.txt. This code/template license does not change the FLUX model license. No template sample portrait is bundled as a customer reference.
 
 ## Graphic Art Director typography
 
