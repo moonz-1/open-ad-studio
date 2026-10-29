@@ -1,0 +1,8 @@
+# Explicit whitelist: this context can never contain product photos or secrets.
+*
+!Dockerfile.preflight
+!.dockerignore
+!pins.json
+!requirements.lock
+!LICENSE-LTX-NODES.txt
+!cpu-check.sh

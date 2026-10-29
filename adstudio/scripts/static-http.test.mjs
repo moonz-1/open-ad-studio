@@ -1,0 +1,21 @@
+// Real production SVG/PNG export API checks. No models/paid inference.
+import assert from 'node:assert/strict';
+import {Resvg} from '@resvg/resvg-js';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {randomBytes,createHash} from 'node:crypto';
+import {newBrand} from '../../shared/lib/brand.ts';
+import {newStaticDesign,staticConcepts,staticSizes} from '../../shared/lib/static-ad.ts';
+const base=process.env.OSH_TEST_URL||'http://127.0.0.1:8300',sha=b=>createHash('sha256').update(b).digest('hex'),post=async(route,body)=>{const r=await fetch(base+'/api/'+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});return{status:r.status,data:await r.json()};};
+const png=new Resvg('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="160"><rect width="120" height="160" fill="#11aa55"/><circle cx="60" cy="80" r="30" fill="#ffee00"/></svg>').render().asPng(),source=await post('upload',{image:'data:image/png;base64,'+png.toString('base64')});assert.equal(source.status,200);const brand=newBrand('Owned test brand'),results=[];
+for(const concept of staticConcepts)for(const size of Object.keys(staticSizes)){const d=newStaticDesign(brand,undefined,concept.id).design;d.photoId='fixture';d.size=size;d.headline='A real local composition';const result=await post('static-ad',{design:d,photo:source.data.url,logo:source.data.url});assert.equal(result.status,200,JSON.stringify(result.data));const b=Buffer.from(await(await fetch(base+result.data.url)).arrayBuffer());assert.equal(b.readUInt32BE(16),1080);assert.equal(b.readUInt32BE(20),staticSizes[size].height);assert.equal(sha(b),result.data.sha256);assert.equal(result.data.sources.photo,sha(png));for(const box of result.data.textBounds)assert.ok(box.x+box.width<=1080&&box.y+box.height<=result.data.height);results.push(result.data);}
+const d=newStaticDesign(brand).design;d.photoId='fixture';const valid={design:d,photo:source.data.url};
+// Measure the round fixture inside the actual exported product frame. Stretching makes it oval.
+const first=results[0],actual=Buffer.from(await(await fetch(base+first.url)).arrayBuffer()),pixels=new Resvg(`<svg xmlns="http://www.w3.org/2000/svg" width="${first.width}" height="${first.height}"><image width="${first.width}" height="${first.height}" href="data:image/png;base64,${actual.toString('base64')}"/></svg>`,{font:{loadSystemFonts:false}}).render().pixels;
+let minX=99999,minY=99999,maxX=-1,maxY=-1;const box=first.photoBox;for(let y=box.y;y<box.y+box.height;y++)for(let x=box.x;x<box.x+box.width;x++){const i=(y*first.width+x)*4;if(pixels[i]>245&&pixels[i+1]>225&&pixels[i+2]<10){minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);}}assert.ok(maxX>minX);const circleRatio=(maxX-minX)/(maxY-minY);assert.ok(Math.abs(circleRatio-1)<.02,'source circle was stretched');
+for(const body of [{},{...valid,design:{...d,photoConfirmed:false}},{...valid,photo:'file:///secret'},{...valid,photo:'/outputs/../../secret.png'},{...valid,design:{...d,background:'red'}},{...valid,design:{...d,headline:'x'.repeat(81)}}])assert.equal((await post('static-ad',body)).status,400,JSON.stringify(body));
+assert.equal((await post('static-ad',{...valid,photo:'/outputs/0000000000000000.png'})).status,404);
+const broken=Buffer.alloc(40);Buffer.from([137,80,78,71,13,10,26,10]).copy(broken);broken.writeUInt32BE(16,16);broken.writeUInt32BE(16,20);const name=randomBytes(8).toString('hex')+'.png';await writeFile('outputs/'+name,broken);assert.equal((await post('static-ad',{...valid,photo:'/outputs/'+name})).status,422);assert.equal((await post('static-ad',valid)).status,200,'recovery after failed render');
+assert.equal(sha(await readFile('.'+source.data.url)),sha(png),'source bytes changed');
+for(const route of ['/api/setup','/api/brand/status','/api/capabilities'])assert.equal((await fetch(base+route)).status,200,route);
+await mkdir('outputs/static-ad-tests',{recursive:true});await writeFile('outputs/static-ad-tests/results.json',JSON.stringify({passed:true,sourceSha256:sha(png),results,modelInference:'NOT RUN'},null,2));
+console.log('PASS actual static PNG API: 3 concepts × 3 formats, hashes/dimensions/layout, source preservation, invalid/missing/corrupt image recovery and retained setup/brand APIs.');

@@ -1,0 +1,24 @@
+// Private self-contained side-by-side gallery; does not constitute a playback review.
+// node adstudio/scripts/motion-gallery.mjs <report.json> <metrics.json> <original.png> <enhanced.png>
+import {readFile,writeFile} from 'node:fs/promises';
+import {dirname,join} from 'node:path';
+const [reportPath,metricsPath,original,enhanced]=process.argv.slice(2);
+const report=JSON.parse(await readFile(reportPath,'utf8')),metrics=JSON.parse(await readFile(metricsPath,'utf8')),folder=dirname(reportPath);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const embed=async(p,mime)=>`data:${mime};base64,${(await readFile(p)).toString('base64')}`;
+async function cards(runs){
+let html='';
+for(const run of runs){
+ const metric=metrics.find(m=>m.name===run.name);
+ const strength=run.camera?'N/A':run.strength??run.request?.keys?.[0]?.strength??1;
+ html+=`<article><h2>${esc(run.name)}</h2><p>Guide strength ${esc(strength)} · ${esc(run.timingNote || run.result.seconds+' s API processing')} · MP4 ${esc(run.export.seconds)} s</p><video muted playsinline controls preload="metadata" src="${await embed(join(folder,run.name+'.mp4'),'video/mp4')}"></video><details><summary>First / middle / final frames</summary><img src="${await embed(join(folder,run.name+'-contact.png'),'image/png')}" alt="${esc(run.name)} first middle final frames"></details><pre>${esc(JSON.stringify(metric?.firstLast,null,2))}</pre></article>`;
+}
+return html;
+}
+const comparison=report.guideComparison;
+const pair=comparison?[comparison.control,comparison.experiment].map(name=>report.runs.find(r=>r.name===name)):[];
+if(pair.some(r=>!r))throw new Error('Missing guide comparison run');
+const paired=pair.length?`<h2>Final conditioning gate: same guide, strength 1.0 versus 0.7</h2><p>${esc(comparison.verdict || 'Visual acceptance pending')} · ${esc(comparison.newGpuRenders)} new GPU render(s); control reused after exact graph/guide audit.</p><button id="play-conditioning">Restart and play strength comparison</button><section id="conditioning">${await cards(pair)}</section><details><summary>Nine matched frames, control above experiment (0–72)</summary><img src="${await embed(comparison.pairedFrames,'image/png')}" alt="Strength 1 and 0.7 at matched times"></details><details><summary>Cookie and tray detail crops, control above experiment</summary><img src="${await embed(comparison.productCrops,'image/png')}" alt="Fixed product ROI crops, not motion aligned"></details><h2>Earlier investigation controls</h2>`:'';
+const remaining=report.runs.filter(r=>!pair.includes(r));
+await writeFile(join(folder,'gallery.html'),`<!doctype html><html lang="en"><meta charset="utf-8"><title>Private Creative motion investigation</title><style>body{font:15px system-ui;background:#16171b;color:#eee;margin:24px}section{display:flex;flex-wrap:wrap;gap:16px}article{border:1px solid #555;padding:12px;width:320px}video{width:100%;height:512px;object-fit:contain;background:#111}img{width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}button{padding:12px}</style><h1>Creative motion investigation — private local evidence</h1><p>A is a byte-identical cached replay of the actual failed download. B and E compare original/enhanced at 9:16. C tests only a distilled-derived schedule at baseline 16:9. D is a deterministic photo transform, not AI motion. ${comparison ? 'F compares guide strength 0.7 with B at strength 1. ' : ''}Full-playback human acceptance remains pending.</p><p>Seed ${esc(report.manifest.seed)}; 73 frames, 24 FPS. Existing LTX-Video 2B 0.9.8 distilled, Euler, CFG 1. Original and enhanced sources below; enhanced is not ground truth.</p><section><article><h2>Original</h2><img src="${await embed(original,'image/png')}" alt="Original photograph"></article><article><h2>Enhanced reference</h2><img src="${await embed(enhanced,'image/png')}" alt="AI enhanced reference"></article></section><p>Exact prompt: ${esc(report.manifest.prompt)}</p><button id="play">Restart and play all</button> <button id="pause">Pause all</button>${paired}<section>${await cards(remaining)}</section><p>Tracking uses explicit product ROIs, NCC patches and a trimmed similarity fit. Deforming textures can resemble zoom. High residuals warn against interpreting fitted rotation/scale as camera geometry. No OCR or brand guarantee.</p><script>document.getElementById('play-conditioning')?.addEventListener('click',()=>{document.querySelectorAll('video').forEach(v=>v.pause());document.querySelectorAll('#conditioning video').forEach(v=>{v.currentTime=0;v.play().catch(()=>{})})});document.getElementById('play').onclick=()=>document.querySelectorAll('video').forEach(v=>{v.currentTime=0;v.play().catch(()=>{})});document.getElementById('pause').onclick=()=>document.querySelectorAll('video').forEach(v=>v.pause());</script></html>`);
+console.log(join(folder,'gallery.html'));

@@ -1,0 +1,65 @@
+﻿import {readFile,writeFile,mkdir,copyFile} from 'node:fs/promises';
+import {resolve,join,dirname} from 'node:path';
+import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+import {inputFixture} from './creative-fixtures.mjs';
+import {creativeContext,fallbackConcepts,assembleCreativePlan} from '../../shared/lib/creative-engine.ts';
+// Existing browser automation package only. No install; supply its directory when not in local dependencies.
+const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_PATH||'playwright');
+const sourcePath=process.env.VIDEO_SOURCE;if(!sourcePath)throw Error('Set VIDEO_SOURCE to the authorized original PNG.');
+const base=process.env.OSH_TEST_URL||'http://127.0.0.1:8316',out=resolve('outputs/video-quality');
+const ffmpeg=process.env.FFMPEG_PATH||'ffmpeg',ffprobe=join(dirname(ffmpeg),'ffprobe.exe');
+await mkdir(out,{recursive:true});
+const source=await readFile(sourcePath),sha=createHash('sha256').update(source).digest('hex');
+const input=inputFixture();input.brand.dna.name='No Crumbs Bakery';input.brand.dna.description='No Crumbs Bakery.';
+input.facts={description:'Four chocolate chip cookies in their original foil tray, viewed from above.',count:4,arrangement:'Four overlapping cookies in a vertical column.',texture:'Golden surfaces and visible chocolate chips.',container:'Rectangular foil tray.',confirmed:true};
+input.source={...input.source,id:'authorized-cookie-photo',name:'Original cookie photograph',sha256:sha,originalSha256:sha};
+input.request='An invitation to share a pause, using the intact overhead photograph. No added objects or claims.';
+const plan=assembleCreativePlan(input,fallbackConcepts(input,creativeContext(input)),{mode:'deterministic',reason:'Agent-authored acceptance direction and copy; no Qwen inference.'},'e'.repeat(16));
+plan.composition.headline='Good things come together.';plan.composition.cta='Share a little joy.';
+await writeFile(join(out,'plan.json'),JSON.stringify(plan,null,2));await copyFile(sourcePath,join(out,'original.png'));
+const browser=await chromium.launch({channel:'chrome',headless:true,args:['--disable-gpu']});
+const page=await browser.newPage();const calls=[];page.on('request',r=>{if(r.url().includes('/api/'))calls.push({method:r.method(),path:new URL(r.url()).pathname});});
+try{
+ await page.goto(base+'/adstudio/');
+ const result=await page.evaluate(async({plan,source,sha})=>{
+  const {WorkspaceStore}=await import('/adstudio/src/workspace-store.ts');
+  const {memoryDriver}=await import('/adstudio/src/projects.ts');
+  const {AdApplication,blobHash}=await import('/adstudio/src/ad-application.ts');
+  const {heroDefaults:defaults}=await import('/shared/lib/hero-ad.ts');
+  const {OSH}=await import('/shared/runtime/client.ts');
+  const driver=memoryDriver(),remember=new Map(),storage={getItem:k=>remember.get(k)||null,setItem:(k,v)=>remember.set(k,v)};
+  const store=await new WorkspaceStore(driver,storage,async()=>driver).initialize();
+  const p=store.active();plan.projectId=p.id;plan.input.projectId=p.id;
+  const blob=await(await fetch(source)).blob(),img=new Image();img.src=source;await img.decode();
+  const asset={id:plan.input.source.id,name:'Authorized original.png',original:blob,normalized:blob,width:img.naturalWidth,height:img.naturalHeight,sha256:sha,originalSha256:sha,created:Date.now()};
+  const uploaded=await OSH.upload(source),settings={...defaults().settings,sourceId:asset.id,brandId:plan.input.brand.id};
+  const take={id:'acceptance-still',assetId:asset.id,url:uploaded.url,created:Date.now(),settings,sourceSha256:sha,originalSha256:sha,sha256:sha,method:'source-photograph',seconds:0,model:'product-safe'};
+  p.hero={version:1,settings,takes:[take],exports:[],activeId:take.id};p.creative={version:1,plans:[],activeId:plan.id};
+  await store.projects.save(p,asset);
+  let gpuCalls=0;const client={...OSH,capabilities:async()=>({finish:true,comfyConnected:false,qwen:{available:false}}),shot:async()=>{gpuCalls++;throw Error('GPU is forbidden in CPU acceptance');}};
+  const app=new AdApplication(store,{open:async()=>structuredClone(plan)},client);
+  const film=await app.animateCampaign(take.id);
+  const restored=await new WorkspaceStore(driver,storage,async()=>driver).initialize();
+  if(restored.active().takes.at(-1)?.source!==film.mp4)throw Error('Film did not survive storage reload');
+  if(await blobHash((await restored.asset(asset.id)).original)!==sha)throw Error('Original bytes changed');
+  return {film,gpuCalls,saved:restored.active().takes.at(-1),attempt:restored.active().attempt,sourceHash:sha};
+ },{plan,source:'data:image/png;base64,'+source.toString('base64'),sha});
+ assert.equal(result.gpuCalls,0);assert.equal(result.saved.settings.model,'editorial-source-motion');assert.equal(result.attempt.status,'complete');assert.equal(result.saved.seconds,9);
+ const mp4=join(out,'no-crumbs-commercial.mp4');await writeFile(mp4,Buffer.from(await(await fetch(base+result.film.mp4)).arrayBuffer()));
+ // Decode actual successive frames: movement must be visible while lettering stays stable.
+ const frame=(t)=>execFileSync(ffmpeg,['-v','error','-ss',String(t),'-i',mp4,'-frames:v','1','-vf','scale=180:320','-pix_fmt','rgb24','-f','rawvideo','pipe:1']);
+ const difference=(a,b,y0,y1)=>{let n=0,sum=0;for(let y=y0;y<y1;y++)for(let x=18;x<162;x++)for(let c=0;c<3;c++){const k=(y*180+x)*3+c;sum+=Math.abs(a[k]-b[k]);n++;}return sum/n;};
+ const start=frame(.25),end=frame(2.75),payStart=frame(3.25),payEnd=frame(5.75);
+ const motion={hook:difference(start,end,112,295),payoff:difference(payStart,payEnd,30,180),lettering:difference(start,end,20,85)};
+ assert.ok(motion.hook>4&&motion.payoff>4,'Photograph movement must survive encoding');assert.ok(motion.lettering<1,'Lettering must remain stationary');
+ const probe=JSON.parse(execFileSync(ffprobe,['-v','error','-show_streams','-show_format','-of','json',mp4],{encoding:'utf8'}));
+ assert.equal(Number(probe.format.duration),9);assert.equal(probe.streams[0].width,720);assert.equal(probe.streams[0].height,1280);assert.equal(probe.streams.length,1);
+ for(const [name,time] of [['hook',.2],['hook-end',2.8],['invitation',3.2],['invitation-end',5.8],['brand',7.5]])execFileSync(ffmpeg,['-y','-v','error','-ss',String(time),'-i',mp4,'-frames:v','1',join(out,name+'.png')]);
+ execFileSync(ffmpeg,['-y','-v','error','-i',mp4,'-vf','fps=2,scale=180:320,tile=6x3','-frames:v','1',join(out,'contact-sheet.png')]);
+ await writeFile(join(out,'report.json'),JSON.stringify({...result,probe,motion,calls,approval:'PENDING_OWNER',provenance:'Original authorized photograph, agent-authored acceptance copy, deterministic canvas + FFmpeg. Zero new AI pixels, model jobs, sound or downloads.'},null,2));
+ await writeFile(join(out,'review.html'),`<!doctype html><meta charset="utf-8"><title>No Crumbs film review</title><style>body{background:#241b16;color:#f3e8d6;font:18px Arial;margin:40px}video{height:72vh}img{max-width:95vw}a{color:inherit}</style><h1>Good things come together.</h1><p>No Crumbs Bakery · 9 seconds · Original photograph + directed editorial motion · Silent</p><video controls loop src="no-crumbs-commercial.mp4"></video><p>Agent-authored copy for owner review. No generated product pixels, music, or inferred product actions.</p><p><a href="no-crumbs-commercial.mp4" download>Download MP4</a></p><img src="contact-sheet.png">`);
+ console.log(JSON.stringify({mp4,seconds:probe.format.duration,gpuCalls:result.gpuCalls,reloaded:true,motion}));
+}finally{await browser.close();}

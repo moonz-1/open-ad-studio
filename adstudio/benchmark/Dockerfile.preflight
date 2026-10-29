@@ -1,0 +1,19 @@
+# Free/local CPU-host check ONLY. No weights, tokens, private photos or GPU flags.
+FROM runpod/comfyui@sha256:7ed65713a24c7c836cea8e5ba338ee140b0257b0a086cc3835784e0473efe2f2
+COPY . /opt/adstudio-benchmark
+RUN python3.12 -c "import torch; assert torch.__version__=='2.10.0+cu128'"
+RUN git init /opt/benchmark-ComfyUI && \
+    git -C /opt/benchmark-ComfyUI remote add origin https://github.com/Comfy-Org/ComfyUI.git && \
+    git -C /opt/benchmark-ComfyUI fetch --depth 1 origin a40c6ce87ba6358080d85fe4ab339bcb0b2fd020 && \
+    git -C /opt/benchmark-ComfyUI checkout --detach FETCH_HEAD && \
+    git init /opt/benchmark-ComfyUI/custom_nodes/ComfyUI-LTXVideo && \
+    git -C /opt/benchmark-ComfyUI/custom_nodes/ComfyUI-LTXVideo remote add origin https://github.com/Lightricks/ComfyUI-LTXVideo.git && \
+    git -C /opt/benchmark-ComfyUI/custom_nodes/ComfyUI-LTXVideo fetch --depth 1 origin 220e1d45aa0469f518e982102fca4dca92a61862 && \
+    git -C /opt/benchmark-ComfyUI/custom_nodes/ComfyUI-LTXVideo checkout --detach FETCH_HEAD
+RUN python3.12 -c "import hashlib,json,pathlib; p=pathlib.Path('/opt/adstudio-benchmark'); assert hashlib.sha256((p/'requirements.lock').read_bytes()).hexdigest()==json.loads((p/'pins.json').read_text())['requirementsSha256']" && \
+    python3.12 -m venv --system-site-packages /opt/benchmark-venv && \
+    PIP_CONSTRAINT= /opt/benchmark-venv/bin/python -m pip install --require-hashes --only-binary=:all: -r /opt/adstudio-benchmark/requirements.lock && \
+    /opt/benchmark-venv/bin/python -m pip check && \
+    /opt/benchmark-venv/bin/python -c "import torch,transformers,diffusers,OpenImageIO,colour; assert torch.__version__=='2.10.0+cu128'"
+ENTRYPOINT []
+CMD ["bash", "/opt/adstudio-benchmark/cpu-check.sh", "--run"]

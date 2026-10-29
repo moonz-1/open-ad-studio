@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {Projects,memoryDriver,newProject,migrateProject,restoredAttempt,ACTIVE_KEY,DATABASE} from '../src/projects.ts';
+const driver=memoryDriver(),store=new Projects(driver),a=newProject('First ad'),b=newProject('Second ad');
+const asset={id:crypto.randomUUID(),name:'owned-product.png',original:new Blob(['original']),normalized:new Blob(['normalized']),width:10,height:20,created:Date.now()};
+a.assetId=asset.id;await store.save(a,asset);await store.save(b);
+const loaded=(await store.list()).find(p=>p.id===a.id);assert.equal(loaded.assetId,asset.id);assert.equal(await(await store.asset(asset.id)).original.text(),'original');
+loaded.name='Renamed';await store.save(loaded);assert.equal((await store.list()).find(p=>p.id===b.id).name,'Second ad');
+const take={id:'take1',created:1,assetId:asset.id,source:'/outputs/0123456789abcdef.webm',kind:'generation',mode:'camera',ratio:'9:16',settings:a.settings,prompt:'',frames:73,fps:24,width:288,height:512,seconds:.4,exports:[]};
+loaded.takes.push(take);await store.save(loaded);loaded.takes.push({...take,id:'take2',kind:'edit',parentId:'take1',source:'/outputs/1111111111111111.webm'});await store.save(loaded);loaded.takes[1].exports.push({id:'mp4',url:'/outputs/2222222222222222.mp4',tagline:'Own copy',created:2});await store.save(loaded);
+const refreshed=(await store.list()).find(p=>p.id===a.id);assert.equal(refreshed.takes.length,2);assert.equal(refreshed.takes[0].source,take.source);assert.equal(refreshed.takes[1].parentId,'take1');assert.equal(refreshed.takes[1].exports.length,1);
+const legacy={...a,version:1,outputs:[take]};delete legacy.takes;assert.deepEqual(migrateProject(legacy).takes,[take]);assert.throws(()=>migrateProject({...a,version:99}));assert.throws(()=>migrateProject({...a,takes:[{...take,source:'https://untrusted/video'}]}));assert.throws(()=>newProject(' '));
+for(const invalid of [null,{...take,width:NaN},{...take,fps:0},{...take,settings:null},{...take,exports:[{url:'javascript:alert(1)'}]}])assert.throws(()=>migrateProject({...a,takes:[invalid]}),/Invalid saved history/);
+refreshed.attempt={id:'pending',status:'running',created:1,takeIds:[]};assert.equal(restoredAttempt(refreshed),true);assert.equal(refreshed.attempt.status,'interrupted');assert.equal(restoredAttempt(refreshed),false);
+const failing=new Projects({...driver,put:async()=>{throw Error('QuotaExceededError')}});await assert.rejects(failing.save(refreshed),/Quota/);assert.equal((await store.list()).find(p=>p.id===a.id).takes.length,2);
+assert.ok(ACTIVE_KEY.startsWith('osh-adstudio:'));assert.ok(DATABASE.startsWith('osh-adstudio'));assert.equal(JSON.stringify(a).includes('normalized'),false);
+console.log('PASS: isolated projects/rename/switch/reload, blob references, immutable take/export lineage, v1 migration, unsupported data, interrupted attempts, storage failure.');

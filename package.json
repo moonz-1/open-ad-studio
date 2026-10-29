@@ -1,0 +1,53 @@
+{
+  "name": "open-ad-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Open Ad Studio \u2014 local open-weights product advertising on ComfyUI",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node --experimental-transform-types adstudio/scripts/serve-release.mjs",
+    "setup": "node --experimental-transform-types shared/runtime/install.ts",
+    "dev": "vite",
+    "dev:share": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build && node adstudio/scripts/release-build.mjs --stamp",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "models": "node --experimental-transform-types shared/runtime/fetch-models.ts",
+    "test": "npm run test:adstudio-ui && npm run test:creative && npm run test:website && npm run test:journey && npm run test:local-ai && npm run test:brand-intelligence && npm run test:catalog && npm run test:intelligence",
+    "test:creative-director": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/creative-director.test.mjs adstudio/scripts/argument-planning.test.mjs adstudio/scripts/product-fidelity.test.mjs",
+    "test:creative": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/creative-engine.test.mjs adstudio/scripts/creative-http.test.mjs adstudio/scripts/creative-quality.test.mjs adstudio/scripts/creative-contract.test.mjs adstudio/scripts/creative-proposals.test.mjs adstudio/scripts/campaign-review.test.mjs adstudio/scripts/creative-intelligence.test.mjs adstudio/scripts/argument-planning.test.mjs adstudio/scripts/product-fidelity.test.mjs",
+    "test:website": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/website-discovery.test.mjs adstudio/scripts/website-journey.test.mjs adstudio/scripts/website-ui.test.mjs adstudio/scripts/website-http.test.mjs adstudio/scripts/source-provenance.test.mjs",
+    "test:adstudio-ui": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/workspace-store.test.mjs adstudio/scripts/ad-application.test.mjs adstudio/scripts/react-app.test.mjs adstudio/scripts/download.test.mjs adstudio/scripts/workflow-switching.test.mjs adstudio/scripts/workflow-react.test.mjs",
+    "test:brand-intelligence": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/brand-intelligence.test.mjs adstudio/scripts/brand-understanding-ui.test.mjs",
+    "test:catalog": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/catalog-discovery.test.mjs adstudio/scripts/catalog-flow.test.mjs adstudio/scripts/catalog-ui.test.mjs",
+    "test:qwen-text": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/qwen-text-reliability.test.mjs adstudio/scripts/qwen-request-readiness.test.mjs",
+    "test:local-ai": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/klein-background.test.mjs adstudio/scripts/klein-composition.test.mjs adstudio/scripts/klein-app-flow.test.mjs adstudio/scripts/klein-scene.test.mjs adstudio/scripts/klein-scene-app.test.mjs adstudio/scripts/product-campaign.test.mjs",
+    "test:journey": "node --experimental-transform-types --test adstudio/scripts/journey.test.mjs",
+    "test:release": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/campaign-film-art.test.mjs adstudio/scripts/journey.test.mjs adstudio/scripts/campaign-motion.test.mjs adstudio/scripts/creative-intelligence.test.mjs adstudio/scripts/generation-engines.test.mjs adstudio/scripts/klein-scene.test.mjs",
+    "test:klein-bootstrap": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/klein-bootstrap.test.mjs adstudio/scripts/klein-background.test.mjs adstudio/scripts/klein-scene.test.mjs adstudio/scripts/product-campaign.test.mjs adstudio/scripts/generation-engines.test.mjs",
+    "test:film": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/film.test.mjs adstudio/scripts/video-quality.test.mjs adstudio/scripts/campaign-film-art.test.mjs",
+    "release": "node --experimental-transform-types adstudio/scripts/serve-release.mjs",
+    "test:flux3": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/flux3-runtime.test.mjs adstudio/scripts/flux3-spatial.test.mjs adstudio/scripts/composition-dynamics.test.mjs",
+    "test:intelligence": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/creative-intelligence-recovery.test.mjs adstudio/scripts/qwen-text-reliability.test.mjs adstudio/scripts/qwen-request-readiness.test.mjs",
+    "test:consolidated": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/consolidated-rc.test.mjs adstudio/scripts/creative-director.test.mjs adstudio/scripts/flux3-spatial.test.mjs adstudio/scripts/graphic-art-director.test.mjs adstudio/scripts/product-identity.test.mjs adstudio/scripts/framing-quality.test.mjs",
+    "test:runpod": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/runpod-flux-controller.test.mjs"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "@comfyorg/sdk": "^0.5.0",
+    "@resvg/resvg-js": "2.6.2",
+    "parse5": "8.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

@@ -1,0 +1,51 @@
+// Single bakery Creative Restage: drop disposable foil tray. Bounded one job.
+import {randomBytes} from 'node:crypto';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {join,resolve} from 'node:path';
+import {loadEnv} from 'vite';
+import {Comfy} from '@comfyorg/sdk';
+import {assembleCreativePlan,creativeContext,fallbackConcepts} from '../../shared/lib/creative-engine.ts';
+import {newBrand} from '../../shared/lib/brand.ts';
+import {campaignDesign,adScenePrompt} from '../../shared/lib/ad-scene.ts';
+import {newStaticDesign} from '../../shared/lib/static-ad.ts';
+import {renderKleinScene} from '../../shared/runtime/klein-scene.ts';
+import {heroSha} from '../../shared/runtime/hero-ad.ts';
+import {campaignSVG} from '../../shared/lib/campaign-ad.ts';
+
+const root=resolve('.'),env=loadEnv('development',root,'');
+process.env.COMFYUI_URL=env.COMFYUI_URL||'http://127.0.0.1:8188';
+process.env.COMFY_BASE_URL=env.COMFY_BASE_URL||'http://127.0.0.1:8189';
+const modelsDir=process.env.ADSTUDIO_KLEIN_MODELS_DIR||env.ADSTUDIO_KLEIN_MODELS_DIR;
+const outputsRoot=join(root,'outputs');
+const prior=join(outputsRoot,'campaign-quality-2026-10-27T16-33-25','bakery');
+const outDir=join(outputsRoot,'creative-restage-2026-10-27T17-09-09','bakery-v2-notray');
+await mkdir(outDir,{recursive:true});
+const native=async p=>(await fetch((process.env.COMFYUI_URL)+p)).json();
+await fetch(process.env.COMFYUI_URL+'/free',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({unload_models:true,free_memory:true})});
+await new Promise(r=>setTimeout(r,2000));
+const pngBytes=await readFile(join(prior,'original.png'));
+const name=randomBytes(8).toString('hex')+'.png';
+await writeFile(join(outputsRoot,name),pngBytes);
+const image='/outputs/'+name;
+const brand=newBrand('No Crumbs Bakery');brand.colors=['#f3ebe1','#321a12','#9a5528'];
+brand.dna.tone='Warm, inviting, tactile.';brand.dna.visualStyle='Warm cream and cocoa bakery editorial.';
+brand.assets=[{id:'photo',assetId:'photo-asset',name:'product.png',role:'product'}];
+brand.products=[{id:'sku',name:'Cookies',description:'Four chocolate chip cookies',sellingPoints:'',imageIds:['photo']}];
+const input={version:1,projectId:'bakery-v2',brand,source:{id:'photo-asset',name:'product.png',kind:'original',sha256:heroSha(pngBytes),originalSha256:heroSha(await readFile(join(prior,'original-source.jpg')))},
+ facts:{description:'Exactly four thick chocolate chip cookies with golden cracked tops and visible chocolate chunks. Do NOT show any aluminum foil tray, tin, pan or disposable packaging.',count:4,arrangement:'Four cookies artfully clustered on a surface, individually visible, lightly overlapping.',texture:'Golden cracked baked surfaces and uneven chocolate chips.',container:'No foil tray. Cookies rest directly on walnut wood or stone with cream linen nearby.',confirmed:true},
+ productType:'cookies',productId:'sku',request:'Luxury food editorial. Remove the disposable foil packaging entirely. Stage exactly four cookies as the appetizing hero on rich walnut with cream linen, warm window side-light raking across crumb texture. Premium bakery campaign, not grocery packaging.',intent:'campaign',format:'feed',seed:51};
+const plan=assembleCreativePlan(input,fallbackConcepts(input,creativeContext(input)),{mode:'deterministic',reason:'bakery-v2',model:'None'},randomBytes(8).toString('hex'));
+let prompt=adScenePrompt(plan);
+prompt+='\n\nCRITICAL CREATIVE DIRECTION: Do not depict aluminum foil, disposable trays, loaf tins or metal bakeware. Photograph only the four cookies as a premium food still life on walnut with linen. Appetizing close presence.';
+console.log('prompt preview',prompt.slice(0,280));
+const c=new Comfy();
+const scene=await renderKleinScene(outputsRoot,modelsDir,await native('/system_stats'),await native('/queue'),c,prompt,51,image,'food-editorial',process.env.COMFYUI_URL,AbortSignal.timeout(600000),m=>console.log(m));
+const sceneBytes=await readFile(join(outputsRoot,scene.url.slice(9)));
+await writeFile(join(outDir,'creative-restage-raw.png'),sceneBytes);
+const draft=newStaticDesign(brand,'sku');
+const design=campaignDesign({...draft.design,headline:'Fresh from the oven.',body:'',cta:'Order today',website:'nocrumbsbakery.example',photoConfirmed:true},scene.archetype,'scene');
+const {Resvg}=await import('@resvg/resvg-js');
+const svg=campaignSVG(design,{photo:'data:image/png;base64,'+sceneBytes.toString('base64')},1080,1350).svg;
+await writeFile(join(outDir,'advertisement.png'),Buffer.from(new Resvg(svg).render().asPng()));
+await writeFile(join(outDir,'meta.json'),JSON.stringify({jobId:scene.jobId,seconds:scene.seconds,sha256:scene.sha256,warning:scene.warning,prompt},null,2));
+console.log('BAKERY_V2',outDir,scene.seconds+'s',scene.jobId);

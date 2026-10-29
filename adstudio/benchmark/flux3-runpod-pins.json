@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "purpose": "one-click-flux3-mi2i",
+  "gpu": {
+    "id": "NVIDIA A40",
+    "minCudaVersion": "12.8",
+    "minRamPerGpu": 48,
+    "minVcpuCountPerGpu": 8,
+    "hourlyUSD": 0.59,
+    "altL40S": {
+      "id": "NVIDIA L40S",
+      "hourlyUSD": 1.09,
+      "note": "Preferred for headroom; exceeds current demo spendable envelope without top-up."
+    }
+  },
+  "storage": {
+    "containerDiskGiB": 40,
+    "persistentDiskGiB": 80,
+    "persistentPath": "/workspace",
+    "storageHourlyBoundUSD": 0.02,
+    "networkVolumeHint": "Attach a Secure Cloud network volume with FLUX.3 Klein BF16 + Qwen3-VL + pup + VAE under ComfyUI/models to avoid re-upload. Volume bills until deleted."
+  },
+  "image": {
+    "ref": "runpod/comfyui@sha256:7ed65713a24c7c836cea8e5ba338ee140b0257b0a086cc3835784e0473efe2f2",
+    "note": "Base image reference only; not a verified FLUX deployment. Live creation requires an explicit digest-pinned prepared WORKER_IMAGE and startup CMD, then remote files/native-node/resource verification."
+  },
+  "comfy": {
+    "remoteListen": "127.0.0.1",
+    "remotePort": 3001,
+    "localForwardPort": 18188,
+    "localProxyPort": 18189,
+    "neverPublicHttp": true
+  },
+  "ssh": {
+    "keyName": "runpod_ltx25",
+    "ports": [
+      "22/tcp"
+    ]
+  },
+  "workflow": {
+    "contract": "shared/workflows/flux3_klein_bf16_mi2i_contract.json",
+    "graph": "shared/workflows/flux3_klein_bf16_mi2i.json",
+    "requiredWeightBytes": 27089000000
+  },
+  "budgetDefaults": {
+    "protectedReserveUSD": 2.96,
+    "maxJobUSD": 0.5,
+    "maxSessionUSD": 0.5,
+    "maxLeaseSeconds": 2400,
+    "idleReleaseSeconds": 180
+  },
+  "customerStages": [
+    "Preparing GPU",
+    "Loading model",
+    "Generating photograph",
+    "Checking product",
+    "Designing advertisement",
+    "Ready"
+  ]
+}

@@ -1,0 +1,4 @@
+# The one non-Node tool: Comfy's v2 API proxy that sits in front of a self-hosted ComfyUI
+# (the TypeScript SDK talks to it). Install once, e.g.:  pip install -r shared/runtime/requirements.txt
+# The Vite server starts it automatically (looks in .venv, then PATH, or COMFY_API_PROXY in .env).
+comfy-api-proxy==0.1.6

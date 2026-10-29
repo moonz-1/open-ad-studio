@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import {assembleCreativePlan,creativeContext,fallbackConcepts} from '../../shared/lib/creative-engine.ts';
+import {newBrand} from '../../shared/lib/brand.ts';
+import {campaignMotionPrompt,campaignVideoSize,validateCampaignVideo} from '../../shared/lib/campaign-motion.ts';
+
+const brand=newBrand('No Crumbs Bakery');brand.colors=['#f3ebe1','#321a12'];
+brand.assets=[{id:'photo',assetId:'a',name:'p.png',role:'product'}];
+brand.products=[{id:'sku',name:'Cookies',description:'Four cookies',sellingPoints:'',imageIds:['photo']}];
+const input={version:1,projectId:'t',brand,source:{id:'a',name:'p.png',kind:'original',sha256:'a'.repeat(64),originalSha256:'b'.repeat(64)},facts:{description:'Four chocolate chip cookies on linen.',count:4,arrangement:'Cluster',texture:'Cracked',container:'Linen',confirmed:true},productType:'cookies',productId:'sku',request:'Warm bakery editorial',intent:'campaign',format:'feed',seed:61};
+const plan=assembleCreativePlan(input,fallbackConcepts(input,creativeContext(input)),{mode:'deterministic',reason:'test',model:'None'},'c'.repeat(16));
+const prompt=campaignMotionPrompt(plan);
+assert.match(prompt,/Slow gentle camera push-in/i);
+assert.match(prompt,/cookies/i);
+assert.match(prompt,/No morphing/i);
+assert.equal(campaignVideoSize.model,'ltxv-2b-0.9.8-distilled.safetensors');
+assert.equal(campaignVideoSize.width,288);
+const ok=validateCampaignVideo({version:1,id:'v1',parentTakeId:'t1',created:1,mode:'ltx-creative',model:campaignVideoSize.model,prompt,seed:61,width:288,height:512,frames:73,fps:24,duration:3,seconds:12,startImage:'/outputs/'+'a'.repeat(16)+'.png',rawWebm:'/outputs/'+'b'.repeat(16)+'.webm',warning:'w',sourceSha256:'a'.repeat(64),startSha256:'c'.repeat(64),jobNote:'n'});
+assert.equal(ok.mode,'ltx-creative');
+assert.throws(()=>validateCampaignVideo({version:1,id:'x',parentTakeId:'t',created:1,mode:'ltx-creative',model:'m',prompt:'p',seed:1,width:1,height:1,frames:1,fps:1,duration:1,seconds:1,startImage:'x',rawWebm:'bad',warning:'',sourceSha256:'',startSha256:'',jobNote:''}));
+console.log('PASS campaign motion prompts, video size contract, validateCampaignVideo.');

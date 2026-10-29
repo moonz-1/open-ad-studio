@@ -1,0 +1,46 @@
+{
+  "14": {
+    "class_type": "LoadImage",
+    "inputs": {
+      "image": "adstudio-reference.png"
+    }
+  },
+  "20": {
+    "class_type": "LoadBackgroundRemovalModel",
+    "inputs": {
+      "bg_removal_name": "birefnet.safetensors"
+    }
+  },
+  "21": {
+    "class_type": "RemoveBackground",
+    "inputs": {
+      "bg_removal_model": [
+        "20",
+        0
+      ],
+      "image": [
+        "14",
+        0
+      ]
+    }
+  },
+  "22": {
+    "class_type": "MaskToImage",
+    "inputs": {
+      "mask": [
+        "21",
+        0
+      ]
+    }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": [
+        "22",
+        0
+      ],
+      "filename_prefix": "adstudio/product-mask"
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "image": "outputs/your-normalized-product.png",
+  "original": "C:/path/to/your-approved-source.jpg",
+  "prompt": "A gentle slow camera push toward the pastry on its white plate. Warm bakery lighting, shallow depth of field. Keep the pastry, cream and cocoa topping intact. No melting, no new ingredients, no hands. Clean studio background, controlled lighting, smooth camera movement. Preserve the reference product appearance and branding. No added text.",
+  "seed": 1,
+  "duration": 3,
+  "ratios": ["16:9", "9:16", "1:1"]
+}

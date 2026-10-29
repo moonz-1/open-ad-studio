@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "id": "qwen-fp8",
+  "name": "Qwen-Image-Edit-2511 FP8",
+  "license": "Apache-2.0",
+  "officialGuide": "https://docs.comfy.org/tutorials/image/qwen/qwen-image-edit-2511",
+  "upstream": {
+    "repo": "Comfy-Org/workflow_templates",
+    "commit": "e7cd011d4ded3411c2f481200544f0be6fdc962e",
+    "path": "templates/image_qwen_image_edit_2511.json",
+    "sha256": "b23103935f437e1fe3184247fa5bafb891a28113d0c63de7449b7cdfb0419111"
+  },
+  "graphSha256": "8dc8cda519f67c812b77543990d14adb647ff413f92423718bf889515bed1bd6",
+  "files": [
+    {
+      "file": "diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors",
+      "repo": "Comfy-Org/Qwen-Image-Edit",
+      "revision": "f68ace85e60b4a02a323e394253731947657b7d2",
+      "path": "split_files/diffusion_models/qwen_image_edit_2511_fp8mixed.safetensors",
+      "bytes": 20533762817,
+      "sha256": "c9fdc158e46d3b61ef75f21ae866ca2fe808bf4a53643120d1c1e87c19280a4e",
+      "license": "Apache-2.0",
+      "gated": false
+    },
+    {
+      "file": "text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "repo": "Comfy-Org/Qwen-Image",
+      "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
+      "path": "split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "bytes": 9384670680,
+      "sha256": "cb5636d852a0ea6a9075ab1bef496c0db7aef13c02350571e388aea959c5c0b4",
+      "license": "Apache-2.0",
+      "gated": false
+    },
+    {
+      "file": "vae/qwen_image_vae.safetensors",
+      "repo": "Comfy-Org/Qwen-Image",
+      "revision": "1f12b17be14c89b026c51a91d67c32f84bb047bc",
+      "path": "split_files/vae/qwen_image_vae.safetensors",
+      "bytes": 253806246,
+      "sha256": "a70580f0213e67967ee9c95f05bb400e8fb08307e017a924bf3441223e023d1f",
+      "license": "Apache-2.0",
+      "gated": false
+    }
+  ]
+}

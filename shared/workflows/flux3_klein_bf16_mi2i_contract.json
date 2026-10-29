@@ -1,0 +1,83 @@
+{
+  "id": "flux3-klein-bf16-mi2i",
+  "status": "live-verified-2026-10-29",
+  "license": "FLUX Kommunity License",
+  "textEncoderLicense": "Apache-2.0",
+  "promptUpsamplerLicense": "Apache-2.0",
+  "repo": "black-forest-labs/flux-3-image-klein-comfy",
+  "officialWorkflowFile": "workflows/flux3_klein_bf16_mi2i.json",
+  "officialWorkflowOid": "05730a9c0dd373925823e06f38ce82ce7ebea4e5",
+  "officialRevisionNote": "Operational API graph is derived from the tracked Comfy workflow template. The BFL HF UI workflow is an external reference; its original oid is retained separately.",
+  "operationalSource": "Native graph runs were verified by the image agent. A40 compatibility run bypassed TextGenerate. The RC SDK/proxy transport and current-customer binding have CPU contract coverage; fresh live RC acceptance remains required.",
+  "workflowFile": "flux3_klein_bf16_mi2i.json",
+  "apiWorkflowFile": "flux3_klein_bf16_mi2i.api.json",
+  "i2iWorkflowFile": "flux3_klein_bf16_i2i.json",
+  "uiUpstreamFile": "_upstream_comfy_image_flux3_klein_distilled_image_edit.json",
+  "singleReferenceFallback": "flux3_klein_bf16_i2i.json (same schedule; one LoadImage).",
+  "graphSha256": "d46ddf903d8cec62dbda37cb1761cc19eb0010de701f1163dc831871cc4fdf7c",
+  "i2iGraphSha256": "32a364f0232973276fb36829e5a0b66e0270d109fcda147e428da2728b5403c1",
+  "comfyUiMinVersion": "0.41.0",
+  "defaults": {
+    "steps": 16,
+    "guidance": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "promptUpsampler": true,
+    "checkpoint": "diffusion_models/flux3-image-klein-bf16.safetensors",
+    "textEncoder": "text_encoders/qwen3vl_4b_bf16.safetensors",
+    "promptUpsamplerFile": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+    "vae": "vae/flux2-vae.safetensors",
+    "references": [
+      "current-reviewed-source",
+      "current-reviewed-source-as-identity"
+    ],
+    "bboxFormat": "comfy-caption-json-0-1000"
+  },
+  "requiredNodes": [
+    "BatchImagesNode",
+    "CLIPLoader",
+    "CLIPTextEncode",
+    "ComfySwitchNode",
+    "ConditioningZeroOut",
+    "KSampler",
+    "LoadImage",
+    "PrimitiveStringMultiline",
+    "ReferenceMultiLatent",
+    "SaveImage",
+    "TextGenerate",
+    "UNETLoader",
+    "VAEDecode",
+    "VAELoader"
+  ],
+  "files": [
+    {
+      "file": "diffusion_models/flux3-image-klein-bf16.safetensors",
+      "bytes": 11097404512,
+      "sha256": null,
+      "license": "FLUX Kommunity License",
+      "gated": true
+    },
+    {
+      "file": "text_encoders/qwen3vl_4b_bf16.safetensors",
+      "bytes": 8875719408,
+      "sha256": null,
+      "license": "Apache-2.0",
+      "gated": true
+    },
+    {
+      "file": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+      "bytes": 6724090780,
+      "sha256": null,
+      "license": "Apache-2.0",
+      "gated": true
+    },
+    {
+      "file": "vae/flux2-vae.safetensors",
+      "bytes": 336211292,
+      "sha256": null,
+      "license": "FLUX Kommunity License",
+      "gated": true
+    }
+  ],
+  "note": "Optional cloud backend (Secure RunPod L40S via SSH tunnel). App remains usable without FLUX3: Product-safe and Klein paths stay default when ADSTUDIO_FLUX3_INFERENCE is unset."
+}

@@ -1,0 +1,11 @@
+{
+  "id": "klein-scene",
+  "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/main/templates/image_flux2_klein_image_edit_4b_distilled.json",
+  "graphSha256": "8f066b3d27f46805e3ef5b7b263ca6fabed94f9a1db2718e9c2fd2850031d9b2",
+  "weightsContract": "klein4b_fp8_contract.json",
+  "width": 768,
+  "height": 960,
+  "referenceMegapixels": 0.33,
+  "referenceNode": "14",
+  "referenceConditioning": "Native VAEEncode + ReferenceLatent on both positive and negative, CFG 1, 4-step Euler. Product details can be redrawn."
+}

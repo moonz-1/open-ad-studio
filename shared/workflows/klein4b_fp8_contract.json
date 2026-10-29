@@ -1,0 +1,34 @@
+{
+  "id": "klein-background",
+  "license": "Apache-2.0",
+  "workflowSource": "https://docs.comfy.org/tutorials/flux/flux-2-klein",
+  "files": [
+    {
+      "file": "diffusion_models/flux-2-klein-4b-fp8.safetensors",
+      "repo": "black-forest-labs/FLUX.2-klein-4b-fp8",
+      "revision": "5b4408e59397a4a37ccb46afe426d8ed86379441",
+      "path": "flux-2-klein-4b-fp8.safetensors",
+      "bytes": 4070624520,
+      "sha256": "97ed34fe0567e436200f2faee3939b88f2b5d99f8af2a4dc16532c4245c0ccb6",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "vae/flux2-vae.safetensors",
+      "repo": "Comfy-Org/Flux-2-Klein-4B",
+      "revision": "533c4cbc3d3b89af1743d9466c434e89810391c0",
+      "path": "split_files/vae/flux2-vae.safetensors",
+      "bytes": 336211292,
+      "sha256": "868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3",
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "text_encoders/qwen_3_4b_fp8_mixed.safetensors",
+      "bytes": 5631994051,
+      "sha256": "72450b19758172c5a7273cf7de729d1c17e7f434a104a00167624cba94f68f15",
+      "license": "Apache-2.0",
+      "reused": true,
+      "source": "https://huggingface.co/Comfy-Org/z_image_turbo"
+    }
+  ],
+  "graphSha256": "55f0981eaa3e6145fee17daab725187a7a57de28fda10446a2e2e253368fc6f9"
+}

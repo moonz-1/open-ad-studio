@@ -1,0 +1,18 @@
+{
+  "name": "adstudio-ltx25-REPLACE_SESSION",
+  "cloudType": "SECURE",
+  "computeType": "GPU",
+  "gpuTypeIds": ["NVIDIA A100-SXM4-80GB"],
+  "gpuCount": 1,
+  "interruptible": false,
+  "imageName": "runpod/comfyui@sha256:7ed65713a24c7c836cea8e5ba338ee140b0257b0a086cc3835784e0473efe2f2",
+  "containerDiskInGb": 30,
+  "volumeInGb": 200,
+  "volumeMountPath": "/workspace",
+  "minRAMPerGPU": 110,
+  "minVCPUPerGPU": 8,
+  "minDownloadMbps": 1000,
+  "allowedCudaVersions": ["12.8", "13.0", "13.2"],
+  "ports": ["22/tcp"],
+  "env": {"PUBLIC_KEY": "REPLACE_WITH_APPROVED_SSH_PUBLIC_KEY"}
+}

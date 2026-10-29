@@ -1,0 +1,85 @@
+{
+  "id": "flux3-klein-bf16-i2i",
+  "status": "comfy-template-vendored-pending-hf-mi2i",
+  "license": "FLUX Kommunity License",
+  "textEncoderLicense": "Apache-2.0",
+  "promptUpsamplerLicense": "Apache-2.0",
+  "repo": "black-forest-labs/flux-3-image-klein-comfy",
+  "officialWorkflowFile": "workflows/flux3_klein_bf16_mi2i.json",
+  "officialWorkflowOid": "05730a9c0dd373925823e06f38ce82ce7ebea4e5",
+  "officialRevisionNote": "HF tree oid for workflows/flux3_klein_bf16_mi2i.json on main (listable; download gated until Kommunity License acceptance).",
+  "operationalSource": "Comfy-Org workflow_templates image_flux3_klein_distilled_image_edit.json (ReferenceMultiLatent). Converted to API; UNET/CLIP set to BF16 distilled for L40S.",
+  "workflowFile": "flux3_klein_bf16_i2i.json",
+  "apiWorkflowFile": "flux3_klein_bf16_mi2i.api.json",
+  "i2iWorkflowFile": "flux3_klein_bf16_i2i.json",
+  "uiUpstreamFile": "_upstream_comfy_image_flux3_klein_distilled_image_edit.json",
+  "singleReferenceFallback": "flux3_klein_bf16_i2i.json (same schedule; one LoadImage).",
+  "graphSha256": "32a364f0232973276fb36829e5a0b66e0270d109fcda147e428da2728b5403c1",
+  "i2iGraphSha256": "32a364f0232973276fb36829e5a0b66e0270d109fcda147e428da2728b5403c1",
+  "comfyUiMinVersion": "0.41.0",
+  "defaults": {
+    "steps": 16,
+    "guidance": 1,
+    "sampler": "euler",
+    "scheduler": "simple",
+    "promptUpsampler": true,
+    "checkpoint": "diffusion_models/flux3-image-klein-bf16.safetensors",
+    "textEncoder": "text_encoders/qwen3vl_4b_bf16.safetensors",
+    "promptUpsamplerFile": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+    "vae": "vae/flux2-vae.safetensors",
+    "references": [
+      "no-crumbs-source.png",
+      "sam3-identity-reference.png"
+    ],
+    "bboxFormat": "comfy-caption-json-0-1000"
+  },
+  "requiredNodes": [
+    "BatchImagesNode",
+    "CLIPLoader",
+    "CLIPTextEncode",
+    "ComfySwitchNode",
+    "ConditioningZeroOut",
+    "EmptyFlux2LatentImage",
+    "Flux3LayoutPrompt",
+    "KSampler",
+    "LoadImage",
+    "PrimitiveStringMultiline",
+    "ReferenceMultiLatent",
+    "SaveImage",
+    "TextGenerate",
+    "UNETLoader",
+    "VAEDecode",
+    "VAELoader"
+  ],
+  "files": [
+    {
+      "file": "diffusion_models/flux3-image-klein-bf16.safetensors",
+      "bytes": null,
+      "sha256": null,
+      "license": "FLUX Kommunity License",
+      "gated": true
+    },
+    {
+      "file": "text_encoders/qwen3vl_4b_bf16.safetensors",
+      "bytes": null,
+      "sha256": null,
+      "license": "Apache-2.0",
+      "gated": true
+    },
+    {
+      "file": "text_encoders/qwen3.5_9b_flux3_prompt_upsampler_w4a8.safetensors",
+      "bytes": null,
+      "sha256": null,
+      "license": "Apache-2.0",
+      "gated": true
+    },
+    {
+      "file": "vae/flux2-vae.safetensors",
+      "bytes": null,
+      "sha256": null,
+      "license": "FLUX Kommunity License",
+      "gated": true
+    }
+  ],
+  "note": "Single-reference fallback derived from multi-ref operational graph."
+}

@@ -1,0 +1,39 @@
+Open Ad Studio
+==============
+
+Standalone competition repository for Comfy Org's Open Source Higgsfield event.
+
+Publication snapshot
+--------------------
+- Source RC branch: release/final-rc-20261029
+- Source commit SHA: 78b42e3fade76f1123f578e63883c6eea0e048c4
+- Public GitHub account for this release: moonz-1
+- Independent of the collaborative repository dvsll/open-higgsfield (code lineage acknowledged below)
+
+Attribution
+-----------
+- Application UI, Journey, Classic workspace, and Ad Studio scripts: Open Ad Studio contributors
+- Shared Comfy generation runtime, workflows, and SDK wiring: originally developed in open-higgsfield shared/ (MIT)
+- Cinema Studio / Director UI is not part of this repository
+
+Third-party open-weight models (install separately; not redistributed here)
+---------------------------------------------------------------------------
+See docs/MODELS_AND_LICENSES.md and shared/workflows/CONTRACT.md.
+
+Examples (verify current upstream licenses before use):
+- FLUX.3 Image Klein / FLUX.2 Klein — Black Forest Labs terms (Kommunity / check card)
+- Qwen text / image packs — Apache-2.0 where stated by upstream packaging
+- LTX-Video / LTX-2.5 — Lightricks community / open weights licenses (some gated)
+- Stable Audio Open — Stability AI Community License (optional soundtrack)
+
+Runtime dependencies (npm)
+--------------------------
+Listed in package.json: @comfyorg/sdk, React, Vite, @resvg/resvg-js (MPL-2.0), parse5, TypeScript.
+
+External system tools (not bundled)
+-----------------------------------
+- Node.js 22.18+
+- ComfyUI + comfy-api-proxy on localhost (or SSH-tunneled private worker)
+- FFmpeg (optional assembly / motion)
+
+Do not claim sole authorship of inherited MIT code. Preserve LICENSE copyright lines.

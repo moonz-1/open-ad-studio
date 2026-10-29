@@ -1,0 +1,2 @@
+# MIT runtime; MIT Whisper Tiny weights are downloaded separately by explicit setup.
+faster-whisper==1.2.1

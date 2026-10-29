@@ -1,0 +1,23 @@
+// Real local FFmpeg/collector rehearsal with synthetic pixels only.
+import assert from 'node:assert/strict';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {execFile} from 'node:child_process';
+import {promisify} from 'node:util';
+import {resolve,join} from 'node:path';
+import {createHash} from 'node:crypto';
+import {loadEnv} from 'vite';
+const exec=promisify(execFile),env={...loadEnv('development',process.cwd(),''),...process.env};
+const root=resolve('outputs/benchmark-readiness/collector-'+Date.now()),folder=join(root,'cookie-seed1');await mkdir(folder,{recursive:true});
+const ffmpeg=env.FFMPEG_PATH||'ffmpeg',guide=join(root,'synthetic.png'),video=join(folder,'video.mp4');
+await exec(ffmpeg,['-v','error','-f','lavfi','-i','color=c=blue:s=1088x1920:r=24','-frames:v','1',guide],{windowsHide:true});
+await exec(ffmpeg,['-v','error','-f','lavfi','-i','color=c=blue:s=1088x1920:r=24','-frames:v','73','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',video],{windowsHide:true});
+const hash=createHash('sha256').update(await readFile(video)).digest('hex');
+await writeFile(join(folder,'render.json'),JSON.stringify({status:'complete',videoSha256:hash,input:{guide,label:'SYNTHETIC PIPELINE TEST ONLY'},seconds:0,prompt:'No model was run'}));
+await exec(process.execPath,['adstudio/benchmark/collect.mjs',root],{windowsHide:true});
+const reviewPath=join(folder,'review.json'),review=JSON.parse(await readFile(reviewPath,'utf8'));assert.equal(review.technicalPass,true);assert.equal(review.commercialAcceptance,'NOT ACCEPTED');
+await readFile(join(folder,'frames.png'));assert.match(await readFile(join(root,'gallery.html'),'utf8'),/cookie-seed1/);
+await writeFile(reviewPath,JSON.stringify({...review,motion:'HUMAN REVIEW PLACEHOLDER'}));
+await exec(process.execPath,['adstudio/benchmark/collect.mjs',root],{windowsHide:true});assert.equal(JSON.parse(await readFile(reviewPath,'utf8')).motion,'HUMAN REVIEW PLACEHOLDER');
+await writeFile(video,'tampered synthetic output');
+await assert.rejects(()=>exec(process.execPath,['adstudio/benchmark/collect.mjs',root],{windowsHide:true}),/Video hash mismatch/);
+console.log('PASS: synthetic73-frame/24FPS full-resolution output collection, contact sheet, gallery, preserved review and corrupt-video rejection. No model/private media/network used.');

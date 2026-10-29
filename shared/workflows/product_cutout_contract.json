@@ -1,0 +1,16 @@
+{
+  "id": "birefnet-product-mask",
+  "license": "MIT",
+  "workflowSource": "https://github.com/Comfy-Org/workflow_templates/blob/main/templates/utility_birefnet_remove_background.json",
+  "graphSha256": "23e818f809a4d61f80645b8a7baaf41309b0e3a0fca56bf89947fe1cfa8e5b3e",
+  "files": [
+    {
+      "file": "background_removal/birefnet.safetensors",
+      "repo": "Comfy-Org/BiRefNet",
+      "revision": "35767b272f2846752a3aee1259abdd4586f735c8",
+      "bytes": 444473596,
+      "sha256": "9ab37426bf4de0567af6b5d21b16151357149139362e6e8992021b8ce356a154",
+      "license": "MIT"
+    }
+  ]
+}

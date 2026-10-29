@@ -1,0 +1,7 @@
+/* OFL advertisement faces for browser SVG/preview (paired with Resvg TTF loads). */
+@font-face{font-family:'EB Garamond';font-style:normal;font-weight:400 600;src:url('./EBGaramond-Regular.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Newsreader';font-style:normal;font-weight:400 700;src:url('./Newsreader-Regular.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:400;src:url('./SourceSans3-Regular.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Source Sans 3';font-style:normal;font-weight:600;src:url('./SourceSans3-Semibold.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'DM Sans';font-style:normal;font-weight:500;src:url('./DMSans-Medium.ttf') format('truetype');font-display:swap}
+@font-face{font-family:'Outfit';font-style:normal;font-weight:600;src:url('./Outfit-SemiBold.ttf') format('truetype');font-display:swap}

@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "checked": "2026-10-22",
+  "status": "PREPARED_NOT_GPU_VALIDATED",
+  "image": "runpod/comfyui@sha256:7ed65713a24c7c836cea8e5ba338ee140b0257b0a086cc3835784e0473efe2f2",
+  "imageIndexDigest": "sha256:2cb4015beb6e16b0bbc05ed5d1e39288545b7f4ce8fed9534f4ef0fa88aa2e4d",
+  "imageBuildSource": "runpod-workers/comfyui-base@33dfcd67fd5dfa666bc339aae4b92cf25d292a8b",
+  "python": "3.12",
+  "cuda": "12.8",
+  "torch": "2.10.0+cu128",
+  "torchvision": "0.25.0+cu128",
+  "torchaudio": "2.10.0+cu128",
+  "comfy": "a40c6ce87ba6358080d85fe4ab339bcb0b2fd020",
+  "ltxNodes": "220e1d45aa0469f518e982102fca4dca92a61862",
+  "sdk": "0.5.0",
+  "proxy": "0.1.6",
+  "modelRepo": "Lightricks/LTX-2.5",
+  "modelRevision": "49b093a39c19169a8a81721dcc541e07e945232f",
+  "weights": [
+    {
+      "path": "diffusion_models/ltx-2.5-22b-distilled-transformer-bf16.safetensors",
+      "bytes": 42018190584,
+      "sha256": "31eb3cad89b9e54e99dd3baf286f70825ac4f6c660a70d9184d895be76d7bff4"
+    },
+    {
+      "path": "latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors",
+      "bytes": 995778752,
+      "sha256": "eb5a71fe4068ee87ccdb1c3aa635e547ca76bd2d30ae20ae889f2c325c0677e8"
+    },
+    {
+      "path": "text_encoders/gemma4-12b-with-proj-ltx-2.5-bf16.safetensors",
+      "bytes": 26263858182,
+      "sha256": "ef7243612fdae7a75cb4d5cee9433e81380675fb6c213bd98ae74a9cd16561d1"
+    },
+    {
+      "path": "vae/ltx-2.5-audio-vae-bf16.safetensors",
+      "bytes": 364866540,
+      "sha256": "c52733d37f6a7fb7949c3dc0fb468c6cb2169e4d836983a73babb9f0d54837a5"
+    },
+    {
+      "path": "vae/ltx-2.5-video-vae-bf16.safetensors",
+      "bytes": 1472223346,
+      "sha256": "847e14ca7f3355debca0cea4eaa24ac0fbcdf0061da054ac89ca638a869ddba3"
+    }
+  ],
+  "weightBytes": 71114917404,
+  "officialWorkflow": {
+    "path": "example_workflows/2.5/LTX-2.5_T2V_I2V_Two_Stage_Distilled.json",
+    "sha256": "ddd0626416d8ec9faf6cf37c842210ad87e883ba8154f48b1bd5e80e669c0996"
+  },
+  "requirementsSha256": "38e28e44c0d4b7c2113fe69a4a985e9b59167fdf8e25703054816f94ad1ed0e1",
+  "budget": {
+    "gpuHours": 2.5,
+    "gpuRate": 1.79,
+    "gpu": 4.475,
+    "containerGB": 30,
+    "volumeGB": 200,
+    "storageRatePerGBMonth": 0.1,
+    "monthHoursAssumed": 730,
+    "maxInitialUSD": 6,
+    "totalResearchUSD": 10
+  },
+  "apiWorkflowSha256": "27f16da1be21ed980e15e731c01e4f797b9aaf213e5f7d67fb2d78511efefb2a"
+}

@@ -1,0 +1,26 @@
+// CPU contracts: explicitly mocked SDK. Not real diffusion or browser acceptance.
+import assert from 'node:assert/strict';
+import {readFile,mkdtemp,writeFile,rm} from 'node:fs/promises';
+import {resolve,join,sep} from 'node:path';
+import {kleinResources,kleinWorkflow,runKleinSDK,validateBackgroundRequest} from '../../shared/runtime/klein-background.ts';
+import {verifiedWorkflowText,qwenWorkflow} from '../../shared/runtime/qwen-hero.ts';
+import {heroSha} from '../../shared/runtime/hero-ad.ts';
+import {adBackgroundPrompt} from '../../shared/lib/ad-background.ts';
+import {createCreativeEngine} from '../../shared/runtime/creative-engine.ts';
+import {describeEngines,resolveGenerationEngine} from '../src/generation-engines.ts';
+import {inputFixture,png,dataURL} from './creative-fixtures.mjs';
+const gib=1024**3,stats={system:{ram_free:8*gib},devices:[{type:'cuda',vram_free:5*gib,torch_vram_total:0,torch_vram_free:0}]},queue={queue_running:[],queue_pending:[]};
+assert.equal(kleinResources(stats,queue).available,true);assert.equal(kleinResources(stats,null).available,false);assert.equal(kleinResources(stats,queue,true).status,'busy');assert.equal(kleinResources(stats,{...queue,queue_pending:[[1,'foreign']]}).available,false);assert.equal(kleinResources({...stats,system:{ram_free:gib}},queue).available,false);
+const noAi={finish:true,qwen:{available:false},klein:{available:false,installed:true,tested:false,status:'unsupported',reason:'Untested'}};assert.equal(resolveGenerationEngine('automatic',noAi).id,'product-safe');assert.throws(()=>resolveGenerationEngine('klein',noAi),/Untested/);
+const ready={...noAi,klein:{...noAi.klein,available:true,tested:true,status:'available',reason:'Verified CPU fixture only'}};assert.equal(resolveGenerationEngine('automatic',ready).id,'klein');const k=describeEngines(ready).find(e=>e.id==='klein');assert.equal(k.generatesAiPixels,true);assert.equal(k.preservesOriginalPhotograph,true,'Product-locked campaign retains original product pixels');
+const graph=await kleinWorkflow();assert.equal(graph['9'].inputs.steps,4);assert.equal(graph['10'].inputs.cfg,1);assert.equal(graph['2'].inputs.type,'flux2');assert.equal(graph['2'].inputs.clip_name,'qwen_3_4b_fp8_mixed.safetensors');assert.equal(graph['6'].inputs.width,512);assert.equal(graph['6'].inputs.height,640);
+let submits=0,cancels=0;const c={workflows:{fromJson:g=>({json:g})},submit:async()=>{submits++;return {id:'MOCK-job',events:async function*(){},wait:async()=>{},result:async()=>{},getOutputs:()=>[{toBytes:async o=>{assert.equal(o.timeoutMs,15000);assert.ok(o.signal instanceof AbortSignal);return png;}}],cancel:async()=>{cancels++;}};}};
+assert.deepEqual((await runKleinSDK(c,graph,new AbortController().signal)).bytes,png);assert.equal(submits,1);
+const failed={...c,submit:async()=>{submits++;return {id:'exact-MOCK-job',events:async function*(){},wait:async()=>{throw Error('cancelled CPU fixture');},cancel:async()=>{cancels++;}};}};await assert.rejects(()=>runKleinSDK(failed,graph,new AbortController().signal),e=>e.jobId==='exact-MOCK-job'&&e.cancellationRequested===true);assert.equal(submits,2);assert.equal(cancels,1);
+const lf=Buffer.from('{\n"workflow":"unchanged"\n}\n'),digest=heroSha(lf);assert.equal(verifiedWorkflowText(lf,digest),lf.toString());assert.equal(verifiedWorkflowText(Buffer.from(lf.toString().replaceAll('\n','\r\n')),digest),lf.toString());assert.throws(()=>verifiedWorkflowText(Buffer.from(lf.toString().replace('unchanged','changed')),digest),/Pinned Qwen workflow/);assert.ok(await qwenWorkflow(),'Real pinned Qwen workflow tolerates CRLF only; pin not changed');
+const parent=resolve('outputs'),out=await mkdtemp(join(parent,'klein-cpu-'));
+try{const engine=createCreativeEngine(out,{status:async()=>({available:false,model:'CPU fixture',reason:'No inference'}),generate:async()=>assert.fail('No model')}),input=inputFixture();await writeFile(join(out,'aaaaaaaaaaaaaaaa.png'),png);const plan=await engine.plan({planningMode:'basic',image:'/outputs/aaaaaaaaaaaaaaaa.png',input}),prepared=await engine.prepare({planId:plan.id,current:input,image:'/outputs/aaaaaaaaaaaaaaaa.png',original:dataURL(png),confirmation:{direction:true,facts:true}}),body={projectId:input.projectId,planId:plan.id,preparedId:prepared.preparedId,image:'/outputs/aaaaaaaaaaaaaaaa.png',current:input};const valid=await validateBackgroundRequest(out,body);assert.equal(valid.seed,42);assert.equal(valid.prompt,adBackgroundPrompt(plan));assert.match(valid.prompt,/No products, no food/);assert.match(valid.prompt,/Lighting:/);assert.ok(!valid.prompt.includes('source-1'));
+for(const patch of [{projectId:'wrong'},{current:{...input,seed:43}},{current:{...input,source:{...input.source,sha256:'e'.repeat(64)}}}])await assert.rejects(()=>validateBackgroundRequest(out,{...body,...patch}),/changed|mismatch/);
+await writeFile(valid.receipt,'claimed',{flag:'wx'});await assert.rejects(()=>writeFile(valid.receipt,'duplicate',{flag:'wx'}),/EEXIST/);
+console.log('PASS native Klein workflow/resources, truthful engine selection, exact-job SDK cancellation/no resubmit, reviewed source/plan/seed binding, exclusive receipts, exact background prompt, and CRLF-only Qwen integrity normalization. MOCK CPU only.');
+}finally{if(!out.startsWith(parent+sep))throw Error('Unsafe cleanup');await rm(out,{recursive:true,force:true});}
