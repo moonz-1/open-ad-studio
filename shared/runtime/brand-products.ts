@@ -7,7 +7,7 @@ type Product=Omit<BrandProduct,'id'|'imageIds'> & {discovery:ProductDiscovery};
 const attr=(n:WebNode,k:string)=>n.attrs?.find(a=>a.name===k)?.value||'';
 function nodes(root:WebNode){const found:WebNode[]=[],stack=[root];while(stack.length&&found.length<60000){const n=stack.pop()!;found.push(n);const children=n.childNodes||[];for(let i=children.length-1;i>=0;i--)stack.push(children[i]);}return found;}
 export function canonicalProductURL(value:string){const u=new URL(value);u.hash='';for(const k of [...u.searchParams.keys()])if(/^(?:variant|selling_plan|utm_.+|gclid|fbclid)$/i.test(k))u.searchParams.delete(k);u.pathname=u.pathname.replace(/\/collections\/[^/]+\/products\//i,'/products/').replace(/\/$/,'')||'/';u.searchParams.sort();return u.href;}
-export function productPermalink(value:string,base:string){try{
+export function productPermalink(value:string,base:string){if(!value.trim())return false;try{
  const u=new URL(value,base);if(u.origin!==new URL(base).origin)return false;
  const path=(u.pathname.replace(/\/$/,'')||'/');
  if(/(?:^|\/)(?:cdn|images|assets|files|media)\//i.test(path)||/\.(?:png|jpe?g|webp|svg|gif|pdf|zip)$/i.test(path))return false;

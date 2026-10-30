@@ -1,5 +1,11 @@
 # Current release status
 
+## Deadline stability patch (October 30)
+
+Empty links on product pages no longer crash catalog extraction. Adding or restoring multiple campaign products raises quantity to at least the selected-product count, preserving existing cards and reviews. Uploaded/unlisted products now have an editable Product facts row before planning, clearly labeled as owner input.
+
+The broader product-aware scene-planning candidate is held separately because fresh bakery acceptance did not pass. This release preserves the working planning/Cloud transport and the manual-framing review repair below. No new paid FLUX jobs were submitted for this patch. Record from a verified saved campaign; do not claim the held candidate reproduced premium photograph quality.
+
 ## Manual framing review repair (October 30)
 
 A product that cannot be segmented is now **UNSUPPORTED**, never an automatic PASS or a demonstrated defect. Export waits for an explicit side-by-side comparison and Accept/Reject decision. Each decision is bound to the normalized and original source hashes, delivered output hash, native job, plan/preparation IDs and current automatic report. Rejection, acceptance, edited copy and export survive reload. A newer rejection, changed image, stale report or wrong source invalidates an older approval. Independent clipping, identity, lettering and support blockers cannot be cleared by this framing decision.

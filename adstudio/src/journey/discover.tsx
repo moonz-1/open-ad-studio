@@ -76,7 +76,7 @@ export function Discover({service,j,brand,draft,fallbackName,busy,notice,gate,ru
      {current&&(website
       ?<BriefRow label="Selected product" value={productName} badge="From your website" disabled={busy}/>
       :<BriefRow label="Selected product" value={productName} badge={productName?'Your edit':'Required'} placeholder="Name this product, for example: seasonal tiramisu rolls" disabled={busy} save={v=>edit('Saving product name',async()=>{await app.nameOwnProduct(v);await sourceChanged();})}/>)}
-     {current&&<BriefRow label="Verified product facts" value="" disabled={busy}>{facts.length
+     {current&&<BriefRow label="Product facts" value={product?.description||''} badge={website?'From your website':product?.description?'Your edit':undefined} multiline disabled={busy} save={!website&&product?v=>edit('Saving product facts',async()=>{await app.editSelectedProduct({description:v});await sourceChanged();}):undefined}>{facts.length
       ?<ul className="brief-facts">{facts.map(f=><li key={f}>{f}</li>)}</ul>
       :<p className="brief-empty">{website?'The website listing has no product description.':'Only the details you add are used. Nothing is invented.'}</p>}</BriefRow>}
      {current&&<BriefRow label="Photograph summary" value={summary||(productName?photographSummary(productName):'')} badge={summary?undefined:'Automatic'} placeholder="Named automatically from the product" multiline disabled={busy} save={v=>edit('Saving photograph summary',async()=>{await app.patchFacts({description:v});await sourceChanged();})}>
