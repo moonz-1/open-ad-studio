@@ -33,7 +33,7 @@ Prefer Git? Clone this repository and run the same launcher. [Troubleshooting an
 
 ### Connect your AI
 
-**Try it now, without AI.** Upload an authorized photograph, choose **Basic draft** for planning and **Product-safe design** for generation. This uses your original photograph and digital layout; it does not generate AI pixels.
+**Try it now, without AI.** Upload an authorized photograph, choose **Basic draft** under **Advanced · product details & planning** and **Product-safe design** for generation. This uses your original photograph and digital layout; it does not generate AI pixels.
 
 **Local ComfyUI.** Connect an existing installation and install only the models you choose. Qwen plans creative directions; Klein or FLUX generates photography when your backend supports it. [Local connection guide](docs/CONNECT_AI.md#local-comfyui).
 

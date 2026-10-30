@@ -4,7 +4,7 @@ You can explore the app and make Product-safe PNGs before connecting any AI. No 
 
 ## No GPU or credentials
 
-Upload a photograph you may use, select **Basic draft - no AI planning**, approve a direction and choose **Product-safe design**. The app composes your original pixels with digital typography. Authored and Basic plans are not described as AI successes.
+Upload a photograph you may use, open **Advanced · product details & planning** and select **Basic draft - no AI planning**, approve a direction and choose **Product-safe design**. The app composes your original pixels with digital typography. Authored and Basic plans are not described as AI successes.
 
 ## Local ComfyUI
 
