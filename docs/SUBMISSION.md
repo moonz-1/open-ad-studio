@@ -1,4 +1,4 @@
-﻿# Recording and owner submission
+# Recording and owner submission
 
 ## 110-second recording sequence
 
@@ -55,6 +55,6 @@ The owner must personally accept all four attestations: public licensed repo, la
 ## Owner actions remaining
 
 1. Receive Cursor's verified final Cloud commit, actual job/reference/weight evidence and reload/export acceptance. Authorize any paid inference separately.
-2. Resolve rights to the historical Field Study photograph or authorize appropriate public-history remediation; do not assume HEAD deletion removed it.
+2. Use rights-cleared demo media. The historical Field Study copyright concern is resolved by its documented Unsplash attribution; see the hardening follow-up.
 3. Approve publication of the reviewed final staging diff. No push has occurred from this release-engineering branch.
 4. Record/host the truthful sub-two-minute demo, publish the hashtagged social post, then complete owner details/attestations and submit.

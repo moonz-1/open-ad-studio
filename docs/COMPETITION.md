@@ -1,4 +1,4 @@
-﻿# Competition findings
+# Competition findings
 
 Checked against the [official competition page](https://comfy.org/open-source-higgsfield/) and the [live submission form](https://form.typeform.com/to/V1dSQrkS). Deadline: **October 30, 2026, 9 AM Pacific / noon Eastern**.
 
@@ -19,7 +19,7 @@ The form requires a public licensed repository with setup instructions, a video 
 
 The independent public clone at `3c922518` is public and MIT-licensed, with third-party notices and Comfy workflows. Node 22.20 installation/build/start and desktop/mobile launch were tested. A fresh-clone consolidated-test directory defect is fixed on the separate submission-staging branch. See [exact audit and integration procedure](release/STAGING.md).
 
-No model checkpoints or product photographs are tracked at current HEAD. However, **`adstudio/assets/field-study.png` remains retrievable from the initial public Git history**. The owner must establish redistribution permission or authorize history/hosting remediation before making the unrestricted rights attestation. This engineering task does not rewrite public history.
+No model checkpoints or customer photographs are tracked at current HEAD. An actual empty-interface screenshot is included for documentation. The historical Field Study composite remains in public history. Follow-up found its original attribution to Content Pixie's Unsplash photograph and a separately generated Klein environment; the current Unsplash license permits modified distribution. No copyright blocker requiring history rewriting was established. See [the provenance follow-up](release/HARDENING.md).
 
 Incoming Comfy Cloud support is pending Cursor's verified handoff. No new Cloud image, paid inference, final visual quality or Cloud credit ceiling is certified by this audit. Keep local Qwen/Klein, Product-safe and separate RunPod routes intact during final integration.
 
@@ -29,4 +29,4 @@ Application code: MIT with original contributor attribution retained. Bundled fo
 
 FLUX.3's distribution states FLUX Kommunity terms, including qualifying-user conditions for commercial output; FLUX.2 Klein 4B FP8 states Apache-2.0. LTX and optional audio have separate custom terms. Use the [model inventory](MODELS_AND_LICENSES.md) and upstream terms for the actual configuration. Do not describe all open weights as unrestricted commercial software.
 
-**Recommendation:** proceed toward Best Overall / Most Innovative. Final submission is conditional on a truthful working demo, rights resolution and owner completion of publication/social/form steps. FLUX and Open Weights claims require the final execution evidence; omit LTX bonus unless separately proven.
+**Recommendation:** proceed toward Best Overall / Most Innovative. Final submission is conditional on a truthful working demo, rights-cleared demo assets and owner completion of publication/social/form steps. FLUX and Open Weights claims require the final execution evidence; omit LTX bonus unless separately proven.

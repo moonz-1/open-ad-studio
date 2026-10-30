@@ -1,161 +1,58 @@
 # Open Ad Studio
 
-**An open-source AI creative agency that turns brand and product evidence into advertising campaigns — built on ComfyUI.**
+**Turn your product evidence into an advertisement you can inspect, edit and keep.**
 
-Open Ad Studio is a local web application for the [Comfy Org Open Source Higgsfield](https://comfy.org/open-source-higgsfield/) competition. Bring a business website and authorized product photographs; review AI creative directions grounded in what you can actually see; generate or compose campaign stills through the **Comfy SDK**; verify product identity and framing; finish typography with the Graphic Art Director; export a PNG. Optional photograph-motion video extends the same campaign plan.
+[Get started](#quick-start) · [Connect AI](docs/CONNECT_AI.md) · [Judge guide](docs/JUDGE_GUIDE.md) · [Demo plan](docs/SUBMISSION.md)
 
-> **Honest scope.** Product-safe composition (original photo + design) works offline without GPU weights. Local Qwen creative planning and Klein / FLUX.3 scene generation need ComfyUI and open-weight models you install yourself. One-click RunPod FLUX orchestration is implemented and **dry-run verified**; live cloud spend is opt-in and off by default. Genuine LTX generative video is experimental and not claimed as commercially ready.
+![Open Ad Studio Creative Journey — actual application interface](docs/images/journey.png)
 
----
+Bring a business website or your own product photograph. Review the evidence, choose a creative direction, create a campaign and finish it with editable typography. Your original product stays available for comparison.
 
-For a quick evaluation, read the [judge guide](docs/JUDGE_GUIDE.md). The [recording plan](docs/SUBMISSION.md) and [release handoff](docs/release/STAGING.md) distinguish verified behavior from pending Cloud acceptance.
+### What it does
 
-## Features
+- Discovers products and brand evidence from accessible websites.
+- Keeps local Qwen planning, authored directions and Basic drafts clearly identified.
+- Offers Product-safe design plus separately configured open-weight photography engines.
+- Carries product constraints and composition into generation and product review.
+- Places editable headline, supporting copy and optional CTA around the photograph.
+- Exports PNGs and saves projects in your browser; optional FFmpeg photograph-motion MP4.
 
-| Area | What you get |
-|------|----------------|
-| **Creative Journey** | Guided flow: brand → products → AI concepts → editions → reveal |
-| **Creative Intelligence** | Source-bound briefs and visual directions (local Qwen when configured) |
-| **Composition & Dynamics** | Image-aware layout, copy boxes, photographic captions for restage engines |
-| **Product identity & framing** | Gates that refuse silent “product-safe” swaps when generative checks fail |
-| **Graphic Art Director** | Typography and campaign finish on the approved photograph |
-| **Static export** | PNG advertisement cards with editable copy |
-| **Static → video** | Same creative plan; photograph-motion MP4 (CPU) and optional LTX path |
-| **Comfy Developer Platform** | `@comfyorg/sdk` → `comfy-api-proxy` → ComfyUI (loopback) |
-| **FLUX.3 mi2i** | Pinned open-weight Klein BF16 multi-reference workflow (explicit engine) |
-| **RunPod controller** | Server-side detect / budget gate / SSH tunnel / release (never public Comfy) |
+### Quick start
 
----
+**Install [Node.js 22.18+](https://nodejs.org/) with npm once.** Internet access is needed for the first application-package install. No AI models are downloaded by the launcher.
 
-## Autonomous workflow (supported)
+| Your computer | Launch |
+| --- | --- |
+| Windows | [Download ZIP](https://github.com/moonz-1/open-ad-studio/archive/refs/heads/main.zip), extract it completely, double-click **start.cmd**. |
+| macOS | Extract the ZIP, right-click **start.command** → Open. If needed, run `sh start.command` from that folder. |
+| Linux | Extract the ZIP, then run `sh start.command` from that folder. |
 
-```
-Website + product photo (permission + visible facts)
-  → Creative Intelligence / Creative Director concepts
-  → You approve a direction
-  → Generate Advertisement
-       ├─ Product-safe: compose original pixels + GAD typography → PNG
-       ├─ Klein / FLUX.3: Comfy SDK inference → identity/framing review → GAD → PNG
-       └─ Optional film: photograph-motion (or experimental LTX) from the same plan
-```
+The launcher installs missing application packages, builds the app and asks your default browser to open Journey. If it stays closed, use the printed address. Keep its window open while working. It reuses its running installation or selects a free local port without stopping another process. **Use the same displayed address for your saved projects.**
 
-No partner/API image nodes are required for the open-weights path. FLUX.3 and Klein use local or privately tunneled ComfyUI only.
+Prefer Git? Clone this repository and run the same launcher. [Troubleshooting and manual commands](docs/INSTALL.md).
 
----
+### Connect your AI
 
-## Quick start
+**Try it now, without AI.** Upload an authorized photograph, choose **Basic draft** for planning and **Product-safe design** for generation. This uses your original photograph and digital layout; it does not generate AI pixels.
 
-**Requirements:** Node.js **22.18+**, Git. Optional: ComfyUI on `127.0.0.1:8188`, FFmpeg on `PATH`.
+**Local ComfyUI.** Connect an existing installation and install only the models you choose. Qwen plans creative directions; Klein or FLUX generates photography when your backend supports it. [Local connection guide](docs/CONNECT_AI.md#local-comfyui).
 
-```bash
-git clone https://github.com/moonz-1/open-ad-studio.git
-cd open-ad-studio
-npm ci
-npm start
-```
+**Comfy Cloud, optional.** API access requires an eligible paid subscription, an API key and compatible models. Generations consume credits. The incoming Cloud adapter is awaiting final integrated acceptance; it is not included in this staging application's runtime yet. [Secure setup and release status](docs/CONNECT_AI.md#comfy-cloud).
 
-Open **http://127.0.0.1:8341/adstudio/journey.html**
+### How it works
 
-```bash
-npm run typecheck
-npm run build
-npm run test:release
-```
+**Website → Product evidence → Creative direction → Generate → Compare → Edit → Export**
 
-Copy [`.env.example`](.env.example) to `.env` only when you need overrides. **Never commit `.env`.**
+ComfyUI runs the photography workflow. Graphic Art Director adds digital typography afterwards, keeping your approved words editable. Product identity and framing checks help reveal mismatches; you still review the result before publication.
 
-Windows: if PowerShell blocks `npm.ps1`, use `npm.cmd`. Double-click `start.cmd` also launches the release server after `npm ci` when needed.
+### Built with
 
----
+React · TypeScript · Vite · ComfyUI · Comfy SDK · Qwen · FLUX/Klein · Resvg · optional FFmpeg.
 
-## Create an advertisement (Journey)
+### Requirements & limitations
 
-1. Start the app and open the Journey URL above.
-2. Enter a website and/or upload an **authorized** product photograph.
-3. Confirm what you can see and that you have permission to use the image.
-4. Develop creative directions (AI planning when Qwen is available, or Basic draft).
-5. Approve a direction and choose edition count.
-6. Select an engine (**Product-safe** always works offline; Klein/FLUX.3 need weights).
-7. Generate → review identity/framing → export PNG.
-8. Optional: photograph-motion film from the same campaign card.
+Node.js 22.18+ and npm are required. Git is optional for ZIP downloads. Local AI needs separately installed ComfyUI, models and suitable GPU memory; FLUX.3 BF16 does not fit the tested 10 GB GPU admission requirement. Cloud is paid and opt-in. Website discovery cannot bypass protected sites. Photograph motion is CPU animation; generative LTX video remains experimental. [Models and licenses](docs/MODELS_AND_LICENSES.md).
 
----
+### License
 
-## Inference backends
-
-| Backend | Role | Notes |
-|---------|------|--------|
-| **Product-safe** | Supported | No AI pixels; original photo + layout |
-| **Qwen (planning)** | Supported when installed | Local text planning via Comfy / configured encoder |
-| **FLUX.2 Klein 4B** | Supported when installed | Product-locked / scene paths; ~6+ GiB free VRAM admission |
-| **FLUX.3 Image Klein BF16 mi2i** | Supported when configured | Explicit engine; ≥18 GiB reclaimable VRAM typical; see [FLUX3_RUNTIME](docs/FLUX3_RUNTIME.md) |
-| **RunPod one-click FLUX** | Experimental / opt-in | [RUNPOD_ONE_CLICK_FLUX](docs/RUNPOD_ONE_CLICK_FLUX.md); dry-run default; live flags required to spend |
-| **LTX video** | Experimental | Not claimed as commercial-quality; photograph-motion is the reliable film path |
-
-Consumer GPUs under ~12 GB generally **cannot** run FLUX.3 BF16 locally. Use Product-safe, Klein (if it fits), or an authorized remote worker.
-
-### Local Qwen / Klein models
-
-See [MODELS_AND_LICENSES](docs/MODELS_AND_LICENSES.md) and [KLEIN_BOOTSTRAP](docs/KLEIN_BOOTSTRAP.md). Example:
-
-```bash
-python -m venv .venv
-.venv/Scripts/python -m pip install -r shared/runtime/requirements.txt   # Windows
-npm run models -- --models-dir "<your-ComfyUI/models>" --only klein4b --dry-run
-```
-
-Accept upstream licenses before downloading. Weights are **not** shipped in this repository.
-
-### FLUX.3 / RunPod
-
-1. Install ComfyUI ≥0.41 with the nodes listed in `shared/workflows/flux3_klein_bf16_mi2i_contract.json`.
-2. Place the four contract weight files (or use a prepared volume on a private Pod).
-3. Set `ADSTUDIO_FLUX3_INFERENCE=1` only after license acceptance.
-4. For one-click cloud: read [RUNPOD_ONE_CLICK_FLUX](docs/RUNPOD_ONE_CLICK_FLUX.md). Keep `ADSTUDIO_RUNPOD_LIVE=0` until you intentionally authorize spend.
-
----
-
-## Architecture
-
-```
-Browser (React Journey + Classic workspace)
-  → Vite / Node API (shared/runtime/api.ts)
-  → @comfyorg/sdk
-  → comfy-api-proxy (loopback)
-  → ComfyUI (loopback or SSH-forwarded private worker)
-```
-
-Workflow JSON (API format) lives under [`shared/workflows/`](shared/workflows/) with [`CONTRACT.md`](shared/workflows/CONTRACT.md). Key graphs include Klein scene/campaign, FLUX.3 mi2i, Qwen hero, and film/LTX variants.
-
----
-
-## Competition packaging
-
-- **License:** MIT ([LICENSE](LICENSE)) — OSI-compatible. See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md) for attributions (including MPL-2.0 `@resvg/resvg-js`).
-- **Platform:** Built on the Comfy Developer Platform (SDK + proxy + workflow files).
-- **Open Weights Only:** Product-safe, Klein, Qwen, and FLUX.3 open-weight graphs avoid partner API nodes. Optional RunPod is rented GPU compute with **your** open weights — not a closed generation API. Disclose any uncertainty in [docs/COMPETITION.md](docs/COMPETITION.md).
-- **FLUX bonus:** FLUX.3 is integrated as an explicit core still-image engine when enabled; live quality depends on your backend.
-- **LTX bonus:** LTX workflows are included; generative film is experimental. Photograph-motion does **not** qualify as LTX-core VFX by itself.
-
----
-
-## Contributing
-
-Issues and PRs that improve reliability, docs, and open-weight paths are welcome. Keep secrets out of commits. Prefer Conventional Commits (`feat:`, `fix:`, `docs:`).
-
-## Known limitations
-
-- Live FLUX.3 / RunPod success depends on your GPU, licenses, and spend authorization — not claimed for every machine from this README alone.
-- Generative video identity can drift; framing gates may block close-up food heroes under `full-product` mode.
-- Website discovery cannot bypass logins, private networks, or script-only sites.
-- This repo does not redistribute model checkpoints or private customer photographs.
-
-## Source lineage
-
-Standalone application extracted from Ad Studio work that began in the open-higgsfield collaboration. RC source commit: **`78b42e3`**. Initial public release commit: **`755bab8`**. The audited published snapshot is **`3c922518`**; this staging branch does not yet contain the incoming Comfy Cloud implementation. See [NOTICE](NOTICE).
-
----
-
-## License
-
-[MIT](LICENSE) © 2026 Open Ad Studio contributors and open-higgsfield contributors.
+Application code is [MIT](LICENSE), with Open Ad Studio and original open-higgsfield contributor attribution retained. Fonts, software and models retain their own [third-party terms](docs/THIRD_PARTY_NOTICES.md). The screenshot above is the actual interface, with no customer imagery or generated result.

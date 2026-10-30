@@ -41,3 +41,7 @@ The tracked FLUX template and derived API graphs originate from [Comfy-Org/workf
 ## Graphic Art Director typography
 
 The six already bundled font files (EB Garamond, Newsreader, Source Sans 3 regular/semibold, DM Sans and Outfit) retain the upstream copyright and SIL OFL 1.1 texts in `shared/fonts/licenses/`. The combined notices ship as `OFL-font-licenses.txt` in the production build. Exact sources and browser/export roles are listed in `shared/fonts/README.md`. No font or model was downloaded during this final integration; only the missing redistribution notice texts were retrieved.
+
+## Historical Field Study composite
+
+The removed `adstudio/assets/field-study.png` remains in the initial public Git history. Its original accompanying README attributes the source product photograph to **Content Pixie**, [Unsplash photo cq1zGLQIFyA](https://unsplash.com/photos/cq1zGLQIFyA), under the [Unsplash License](https://unsplash.com/license), combined with an existing source-preserving Klein environment. Field Study was a fictional example, not a customer endorsement. The historical photograph retains its own license; the app MIT license does not relicense it. The follow-up found no copyright blocker requiring a history rewrite. The current release does not bundle it or use it as a customer result. See [hardening evidence](release/HARDENING.md).

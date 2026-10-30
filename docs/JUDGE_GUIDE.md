@@ -1,4 +1,4 @@
-﻿# Evaluate Open Ad Studio
+# Evaluate Open Ad Studio
 
 Open Ad Studio helps a small business turn its own product evidence into an advertisement. The user reviews discovered products, approves a creative direction, chooses how much the photograph may change, and exports a designed PNG.
 
@@ -6,16 +6,9 @@ The connected workflow is the contribution: product evidence, planning provenanc
 
 ## Run the public application
 
-Use Git and Node.js **22.18 or newer**; Node 22.20 was used for the independent fresh-clone audit. Check `node --version` and use the same Node installation for npm.
+Install Node.js **22.18 or newer** with npm once; Node 22.20 is used for this audit. Download/extract the ZIP and double-click `start.cmd` on Windows, or use `sh start.command` on macOS/Linux. The launcher installs application packages, builds and opens Journey. Git is optional for the ZIP path. See [installation](INSTALL.md) and [AI connection](CONNECT_AI.md).
 
-```sh
-git clone https://github.com/moonz-1/open-ad-studio.git
-cd open-ad-studio
-npm ci
-npm start
-```
-
-Open **http://127.0.0.1:8341/adstudio/journey.html**. Startup builds a clean Git checkout when needed; a production build is bound to its exact revision. For code changes use `npm run dev`, or commit intended changes and rebuild. A Git clone is required by the production revision check; an extracted source ZIP is not the tested installation method.
+The launcher prints the actual loopback address, normally `http://127.0.0.1:8341/adstudio/journey.html`, and selects a free port safely when necessary. Keep that address/browser profile for saved work. Production builds are bound to source and asset hashes; Git checkouts additionally retain the clean-revision requirement.
 
 The normal customer page is Journey. Classic workspace is available at `/adstudio/workspace.html`. Keep the same origin for browser-saved projects; changing ports creates separate browser storage. `GET /api/release` identifies the running compiled build.
 

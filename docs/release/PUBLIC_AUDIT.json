@@ -78,5 +78,6 @@
     "nodeTypeCount": 63
   },
   "inference": "not run; CPU fixtures are not AI outputs",
-  "cloudIntegration": "not applied; pending verified Cursor handoff"
+  "cloudIntegration": "not applied; pending verified Cursor handoff",
+  "followUp": "HARDENING.md: historical source attribution found; copyright blocker not established; launcher now supports ZIP archives"
 }
