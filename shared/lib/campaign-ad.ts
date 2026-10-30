@@ -236,9 +236,10 @@ export function campaignSVG(dIn:StaticDesign,images:StaticImages,w:number,h:numb
   const hints:PhotoLayoutHints={
    productBox:{x:photoBox.x/w,y:photoBox.y/h,width:photoBox.width/w,height:photoBox.height/h},
    copySafe:{x:0.08,y:0.05,width:0.84,height:0.18},
-   ...(layoutHints?.zones?{zones:layoutHints.zones}:{})
   };
-  graphicPlan=ensureReadableTextColor(planGraphicArt(d,w,h,hints));
+  // Lettering sits on the painted plate, not the uncomposited source photo.
+  const plateType={...d,textColor:contrast(d.background,d.textColor)>=4.5?d.textColor:ink(d.background)};
+  graphicPlan=ensureReadableTextColor(planGraphicArt(plateType,w,h,hints));
   renderGraphicOverlay(d,graphicPlan,w,h,parts,textBounds,warnings);
   if(contrast(d.background,d.textColor)<4.5)warnings.push('Text/background contrast is below 4.5:1.');
   const quality=evaluateAdQuality(d,{photoBox,canvas:{width:w,height:h}});
