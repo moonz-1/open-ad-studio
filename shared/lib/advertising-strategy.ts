@@ -21,7 +21,7 @@ export function strategyIssues(s:AdvertisingStrategy,context:CreativeContext):st
  if(!Array.isArray(s.proof)||s.proof.length<1||s.proof.length>4)return [...issues,'Bind the argument to 1-4 exact evidence excerpts.'];
  if(s.proof.some(p=>!p||typeof p.id!=='string'||typeof p.quote!=='string'||Object.keys(p).some(k=>!['id','quote'].includes(k))))return [...issues,'Invalid advertising evidence shape.'];
  for(const proof of s.proof){const fact=context.facts.find(f=>f.id===proof?.id&&['source','owner'].includes(f.kind));if(!fact||typeof proof.quote!=='string'||proof.quote.length<12||proof.quote.length>240||!fact.text.includes(proof.quote))issues.push('Unsupported or misquoted advertising evidence.');}
- if(!s.proof.some(p=>['product','brand-description','brand-positioning','brand-differentiators','brand-story'].includes(p.id)))issues.push('Identity or mood alone is not a business-specific reason to advertise.');
+ if(!s.proof.some(p=>['product','product-detail','brand-description','brand-positioning','brand-differentiators','brand-story'].includes(p.id)))issues.push('Identity or mood alone is not a business-specific reason to advertise.');
  if(fields.some(k=>typeof s[k]!=='string'))return issues;
  const prose=fields.map(k=>s[k]).join(' '),evidence=s.proof.map(p=>p.quote).join(' ');
  // Claims/physical properties must already exist in the cited evidence. Audience remains a hypothesis.

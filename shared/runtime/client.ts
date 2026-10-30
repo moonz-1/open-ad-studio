@@ -49,6 +49,7 @@ async function post<T>(name: string, body: unknown, signal?:AbortSignal): Promis
 export type HeroResult={url:string;width:number;height:number;sha256:string;sourceSha256:string;seconds:number;method:string;workflowSha256?:string;model?:string;jobId?:string;provenanceId?:string;originalSha256?:string};
 export const OSH = {
   async creativeStatus(){const r=await fetch('/api/creative/status',{cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||r.statusText);return data as {available:boolean;model:string;reason:string;busy:boolean;wait?:boolean;deadlineMs?:number;fallback:string;imageGeneration:false};},
+  productEvidence:(body:{productKey:string;research:import('../lib/brand').BrandResearch})=>post<import('../lib/brand').ProductEvidence>('brand/product-evidence',body,AbortSignal.timeout(45000)),
   creativePlan:(body:{image:string;input:import('../lib/creative-engine').CreativeInput;planningMode?:'ai'|'basic'},signal?:AbortSignal)=>post<import('../lib/creative-engine').CreativePlan>('creative/plan',body,signal?AbortSignal.any([signal,AbortSignal.timeout(creativePlanRequestMs)]):AbortSignal.timeout(creativePlanRequestMs)),
   creativeSelect:(body:{planId:string;projectId:string;conceptId:string;facts?:import('../lib/product-brief').SourceFacts})=>post<import('../lib/creative-engine').CreativePlan>('creative/select',body),
   creativeRefineComposition:(body:{planId:string;projectId:string;text:string})=>post<import('../lib/creative-engine').CreativePlan>('creative/refine-composition',body),

@@ -69,7 +69,7 @@ export function compileCreativeBrief(plan:CreativePlan):CreativeBriefV2{
  `Camera: ${safe(d.camera.viewpoint)} ${safe(d.camera.distance)} ${safe(d.camera.framing)} ${safe(d.camera.lensFeel)}`,
  `Environment: ${safe(c.environment)}`,
  `Lighting: ${safe(d.light.key)} Atmosphere: ${safe(d.light.atmosphere)}`,
- `Palette: ${i.brand.colors.length?'Brand surroundings may echo '+i.brand.colors.join(', ')+'; preserve real product colours.':'No confirmed brand palette; use neutral surroundings and preserve real product colours.'}`,
+ `Palette: ${c.photographicScene?'Proposed set palette (creative interpretation): '+safe(c.photographicScene.palette)+'; preserve real product colours.':i.brand.colors.length?'Brand surroundings may echo '+i.brand.colors.join(', ')+'; preserve real product colours.':'No confirmed brand palette; use neutral surroundings and preserve real product colours.'}`,
  `Open field (unlettered materials only): ${safe(d.typography.safeRegion)} ${safe(d.frame.negativeSpace)}`,
  'Product observations are owner/source descriptions, not a claim that the text model inspected pixels.',...restrictions,
  ].join('\n');

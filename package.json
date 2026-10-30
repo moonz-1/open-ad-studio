@@ -32,7 +32,7 @@
     "release": "node --experimental-transform-types adstudio/scripts/serve-release.mjs",
     "test:flux3": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/flux3-runtime.test.mjs adstudio/scripts/flux3-spatial.test.mjs adstudio/scripts/composition-dynamics.test.mjs",
     "test:comfy-cloud": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/comfy-cloud-flux.test.mjs",
-    "test:intelligence": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/creative-intelligence-recovery.test.mjs adstudio/scripts/qwen-text-reliability.test.mjs adstudio/scripts/qwen-request-readiness.test.mjs",
+    "test:intelligence": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/creative-intelligence-recovery.test.mjs adstudio/scripts/qwen-text-reliability.test.mjs adstudio/scripts/qwen-request-readiness.test.mjs adstudio/scripts/product-scenes.test.mjs",
     "test:consolidated": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/consolidated-rc.test.mjs adstudio/scripts/creative-director.test.mjs adstudio/scripts/flux3-spatial.test.mjs adstudio/scripts/graphic-art-director.test.mjs adstudio/scripts/product-identity.test.mjs adstudio/scripts/framing-quality.test.mjs adstudio/scripts/scene-lettering.test.mjs",
     "test:runpod": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/runpod-flux-controller.test.mjs"
   },

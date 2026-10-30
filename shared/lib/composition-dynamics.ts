@@ -119,6 +119,7 @@ function arrangementFor(input:CreativeInput,lane:SensoryLane,concept:CreativeCon
 function cameraFor(lane:SensoryLane,controls:CreativePlan['context']['controls'],concept:CreativeConcept){
  if(controls.angle==='none')return {viewpoint:'Match the source viewpoint.',distance:'Match source scale.',framing:clip(concept.composition,160),lensFeel:'Natural photographic perspective.'};
  // Avoid forbidden viewpoint tokens (overhead/profile) even in negations — preflight scans the camera string.
+ if(concept.photographicScene)return {viewpoint:clip(concept.camera,220),distance:'Complete product grouping visible with breathing room.',framing:clip(concept.composition,220),lensFeel:'Natural reference-supported perspective; controlled depth of field.'};
  if(lane==='indulgent-food')return {viewpoint:'Slightly elevated three-quarter tabletop, only where supported by the reference.',distance:'Close enough to read the actually observed surface; full product height visible.',framing:clip(concept.composition,160)||'Compact hero slightly below centre with empty upper open field.',lensFeel:'Shallow depth; tactile food editorial — prefer viewpoints the identity reference can support.'};
  if(lane==='refined-object')return {viewpoint:'Controlled three-quarter that reveals real geometry.',distance:'Product-dominant with architectural breathing room.',framing:clip(concept.composition,160)||'Asymmetric hero with graphic negative space.',lensFeel:'Precise, low distortion, material-accurate reflections.'};
  return {viewpoint:clip(concept.camera,160),distance:'Product-readable — keep the complete product silhouette inside the frame with breathing room.',framing:clip(concept.composition,160)||'Full-product hero with intentional empty open field.',lensFeel:'Believable commercial still.'};
@@ -141,7 +142,8 @@ export function planCompositionLayout(
   fmt==='story'?'story':fmt==='square'?'square':fmt==='landscape'?'landscape':'feed';
 
  let placementBias:PlacementBias='lower-center';
- if(/\b(lower[- ]left|left third|left of centre|left of center)\b/.test(blob))placementBias='lower-left';
+ if(concept.photographicScene){const placement=concept.photographicScene.composition;placementBias=placement.includes('grouping lower-left')?'lower-left':placement.includes('grouping right of centre')?'lower-right':'lower-center';}
+ else if(/\b(lower[- ]left|left third|left of centre|left of center)\b/.test(blob))placementBias='lower-left';
  else if(/\b(lower[- ]right|right third|right of centre|right of center)\b/.test(blob))placementBias='lower-right';
  else if(/\b(mid[- ]left|centre-left|center-left)\b/.test(blob))placementBias='mid-left';
  else if(/\b(centred|centered|dead centre|dead center)\b/.test(blob))placementBias='center';
@@ -235,7 +237,7 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
   },
   frame:{
    heroPlacement:heroPlacementProse(layout),
-   depth:lane==='refined-object'?'Controlled layered depth; geometric light falloff.':lane==='indulgent-food'?'Tactile near-field product; soft environmental depth behind.':layout.balanceNote,
+   depth:concept.photographicScene?clip(concept.photographicScene.environment,220):lane==='refined-object'?'Controlled layered depth; geometric light falloff.':lane==='indulgent-food'?'Tactile near-field product; soft environmental depth behind.':layout.balanceNote,
    negativeSpace:clip(concept.hierarchy,180)||`Keep open field (${Math.round(layout.copySafe.x*100)}%,${Math.round(layout.copySafe.y*100)}%) as empty unlettered materials; keep product fully inside product-safe zone.`,
    hierarchy:clip(concept.hierarchy,200)||'Product first; supports never impersonate the product; open field stays blank (no writing or symbols).',
    energy,
@@ -249,7 +251,7 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
     ?'Intentional close-up only as briefed; remaining branding must stay readable.'
     :'Full-product hero: entire silhouette inside frame with ≥8% breathing room on all sides.',
   },
-  light:{key:clip(concept.lighting,220),atmosphere:clip(input.brand.dna.visualStyle||input.brand.dna.tone,180)},
+  light:{key:clip(concept.lighting,220),atmosphere:clip(concept.photographicScene?.palette||input.brand.dna.visualStyle||input.brand.dna.tone,180)},
   brand:{
    tone:clip(input.brand.dna.tone,160),
    flexibility:policy==='preserve'?'Strict appearance locks win over drama.':policy==='omit-if-not-product'?'Owner-authorized creative reconstruction; packaging may be omitted when it is not the product.':'Modest restyling within disclosed brand signals.',
@@ -304,7 +306,7 @@ export function compositionPlanPrompt(dynamics:CompositionPlan){
 export function applyDynamicsToConcept(concept:CreativeConcept,dynamics:CompositionPlan):CreativeConcept{
  return {
   ...concept,
-  composition:clip(`${dynamics.frame.heroPlacement} ${dynamics.product.arrangement} ${dynamics.frame.negativeSpace}`,500),
+  composition:concept.photographicScene?clip(`${dynamics.frame.heroPlacement} ${dynamics.product.arrangement}`,500):clip(`${dynamics.frame.heroPlacement} ${dynamics.product.arrangement} ${dynamics.frame.negativeSpace}`,500),
   camera:clip(`${dynamics.camera.viewpoint} ${dynamics.camera.distance} ${dynamics.camera.lensFeel}`,400),
   lighting:clip(dynamics.light.key,400),
   hierarchy:clip(`${dynamics.frame.hierarchy} ${dynamics.typography.safeRegion}`,400),

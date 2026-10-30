@@ -75,7 +75,7 @@ import {planFromReference,planOriginalCampaign} from '../lib/reference-video.ts'
 import {buildCreativeIntelligence} from '../lib/creative-intelligence.ts';
 import {planCampaignSound,soundCapabilitiesNote} from '../lib/sound-director.ts';
 import {analyzeOutputAudio,extractReferenceAudio,importSoundtrack,mixCampaignSound,SoundError} from './sound-mix.ts';
-import {analysisStatus,collectBrandImage} from './brand-research.ts';
+import {analysisStatus,collectBrandImage,collectProductEvidence} from './brand-research.ts';
 import {BrandError} from './brand-web.ts';
 import {exportStaticAd,StaticAdError} from './static-ad.ts';
 import {finishHero,exportHeroAd,heroSource,heroSha,HeroError} from './hero-ad.ts';
@@ -821,6 +821,7 @@ function middleware(env: Env,setup:RuntimeSetup,rewriter:PromptRewriter,creative
       if(route==='GET /api/brand/status')return send(res,200,await (env.ADSTUDIO_BRAND_MODEL?analysisStatus(env):brandBackendStatus(brandBackend)));
       if(route==='POST /api/brand/research')return send(res,200,await brand.discover(await readBody(req)));
       if(route==='POST /api/brand/analyze')return send(res,200,await brand.analyze(await readBody(req)));
+      if(route==='POST /api/brand/product-evidence')return send(res,200,await collectProductEvidence(await readBody(req)));
       if(route==='POST /api/brand/image')return send(res,200,await collectBrandImage(await readBody(req)));
       if(route==='GET /api/brand/demo'){
         const file=join(OUTPUTS,'brand-demo','demo.json');if(!existsSync(file))return send(res,404,{error:'No private local brand demo has been prepared.'});

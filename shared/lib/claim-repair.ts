@@ -9,7 +9,7 @@ import {engages} from './advertising-strategy.ts';
 
 export type ClaimRepair={argument:number;field:string;from:string;to:string;claims:string[];reason:string;method:'removed'|'replaced'};
 
-const claimPattern=/\b(?:organic|vegan|cruelty[- ]free|certified|award[- ]winning|handmade|clinically(?: proven| tested)?|dermatologist[- ]tested|hypoallergenic|non[- ]toxic|waterproof|sugar[- ]free|gluten[- ]free|freshly baked|sustainab\w*|recycl\w*|biodegradable|compostable|carbon[- ]neutral|zero[- ]waste|plastic[- ]free|guarantee\w*|eco[- ]friendly|ethical(?:ly)?|health(?:y|ier|iest)?|safe(?:ty|r|st)?|purity|cures?|heals?|proven to|doubles?|(?:long[- ])?lasting|lasts? all day|all[- ]day|sale|discount\w*|free shipping|limited time)\b|[$€£]\s?\d[\d.,]*|\b\d[\d.,]*\s?%|\b\d[\d.,]*(?:[- ]?(?:hours?|hrs?|days?|percent|x))\b/gi;
+const claimPattern=/\b(?:organic|vegan|cruelty[- ]free|certified|award[- ]winning|handmade|clinically(?: proven| tested)?|dermatologist[- ]tested|hypoallergenic|skin[- ]friendl(?:y|iness)|gentle and effective|non[- ]toxic|waterproof|sugar[- ]free|gluten[- ]free|freshly baked|sustainab\w*|recycl\w*|biodegradable|compostable|carbon[- ]neutral|zero[- ]waste|plastic[- ]free|guarantee\w*|eco[- ]friendly|ethical(?:ly)?|health(?:y|ier|iest)?|safe(?:ty|r|st)?|purity|cures?|heals?|proven to|doubles?|(?:long[- ])?lasting|lasts? all day|all[- ]day|sale|discount\w*|free shipping|limited time)\b|[$€£]\s?\d[\d.,]*|\b\d[\d.,]*\s?%|\b\d[\d.,]*(?:[- ]?(?:hours?|hrs?|days?|percent|x))\b/gi;
 const norm=(s:string)=>s.toLowerCase().replace(/[-\s]+/g,' ').trim();
 
 /** Business evidence the planner may cite: owner/source facts only, never inferred hypotheses. */

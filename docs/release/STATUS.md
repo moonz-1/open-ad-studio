@@ -1,5 +1,19 @@
 # Current release status
 
+## Product-aware photographic directions (October 30)
+
+**Candidate checkpoint, not production accepted.** The three-product acceptance is incomplete: fragrance plans are reviewable, but fresh bakery planning timed out. Keep the production recording baseline until this limitation is resolved.
+
+The live Qwen contract previously forbade environment, lighting and camera prose, then compiled every proposal into three fixed studio scenes. The loss of specificity was upstream of FLUX. Strong earlier photographs used concrete authored set direction; their quality did not prove that the automatic planning path preserved it.
+
+New AI plans fetch the selected product permalink through the existing safe public reader. The description, URL, page SHA and retrieval time are bound to that individual plan; enriching a second product does not change the shared brand or invalidate the first plan. A catalog-only recovery is labeled explicitly. Uploaded/unlisted products now have an editable owner-facts row in the Journey.
+
+Qwen proposes a cited interpretation, concrete setting/materials, lighting and palette. One exact citation serves both the advertising argument and scene. The app supplies distinct, complete-product placements and reference-supported camera treatments, honoring owner locks. The full scene contract survives Dynamics and FLUX compilation. Unsupported claim removal is recorded alongside the unchanged native response; physical contradictions still reject. GAD retains sole responsibility for advertising typography.
+
+Empty product links no longer crash detail-page parsing. Campaign quantity is restored to at least the selected-product count. Each reviewed source draft retains its own product evidence through generation preflight. No image-generation transport, source-image hash, Cloud receipt, framing-review decision or identity gate was replaced by this change.
+
+Local text work retains a 2,200-token ceiling, cancellation and no automatic retries, with the established 150-second execution deadline. Model speed and scene quality vary. Text planning does not inspect pixels; proposed scenery is not proof of a better generated photograph. This development pass submits no paid FLUX jobs. Fresh bakery scene-planning attempts on the local RTX 3080 did not finish within the bound; the saved, previously verified bakery campaign remains the recording path. Do not represent that recovered campaign as a fresh product-aware run.
+
 ## Manual framing review repair (October 30)
 
 A product that cannot be segmented is now **UNSUPPORTED**, never an automatic PASS or a demonstrated defect. Export waits for an explicit side-by-side comparison and Accept/Reject decision. Each decision is bound to the normalized and original source hashes, delivered output hash, native job, plan/preparation IDs and current automatic report. Rejection, acceptance, edited copy and export survive reload. A newer rejection, changed image, stale report or wrong source invalidates an older approval. Independent clipping, identity, lettering and support blockers cannot be cleared by this framing decision.

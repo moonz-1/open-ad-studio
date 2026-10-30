@@ -2,7 +2,7 @@ import {photographicDirection} from './photographic-direction.ts';
 import {promptResidue,websiteCopyResidue,genericCopy} from './consumer-copy.ts';
 // Portable Ad Studio planning/compilation. No inference, UI or storage side effects.
 import {strategyIssues,strategySetIssues,type AdvertisingStrategy} from './advertising-strategy.ts';
-import {validateBrand,brandFieldStatus,brandContext,researchSources,type BrandProfile} from './brand.ts';
+import {validateBrand,validProductEvidence,brandFieldStatus,brandContext,researchSources,type BrandProfile} from './brand.ts';
 import {briefDefaults,effectiveControls,newGenerationDraft,recompileDraft,prepareConciseDraft,signalsFromBrand,validateBriefInput,type BriefControls,type BriefInput,type SourceFacts,type GenerationDraft,type Intent} from './product-brief.ts';
 import {heroDefaults,type HeroSettings} from './hero-ad.ts';
 import {newStaticDesign,staticSizes,staticSVG,luminance,type StaticDesign,type StaticConcept} from './static-ad.ts';
@@ -12,9 +12,9 @@ import {claimEvidence} from './claim-repair.ts';
 import type {CompositionPlan} from './composition-dynamics.ts';
 import {buildCompositionPlan,applyDynamicsToConcept,refineCreativeComposition,parseCompositionRefinement} from './composition-dynamics.ts';
 export {parseCompositionRefinement,buildCompositionPlan,compositionPlanPrompt,refineCompositionPlan} from './composition-dynamics.ts';
-export type CreativeInput={version:1;projectId:string;brand:BrandProfile;productId?:string;source:BriefInput['source'];facts:SourceFacts;productType:BriefInput['productType'];request?:string;notes?:string;intent?:Intent;format?:keyof typeof staticSizes;seed?:number;constraints?:Partial<BriefControls>};
+export type CreativeInput={version:1;projectId:string;brand:BrandProfile;productId?:string;productEvidence?:import('./brand.ts').ProductEvidence;source:BriefInput['source'];facts:SourceFacts;productType:BriefInput['productType'];request?:string;notes?:string;intent?:Intent;format?:keyof typeof staticSizes;seed?:number;constraints?:Partial<BriefControls>};
 export type CreativeFact={id:string;text:string;kind:'source'|'owner'|'inferred'|'unconfirmed';sourceIds:string[]};
-export type CreativeConcept={strategy?:AdvertisingStrategy;id:string;title:string;idea:string;composition:string;camera:string;environment:string;lighting:string;hierarchy:string;layout:StaticConcept;copyId:string;evidenceIds:string[];scores:{impact:number;relevance:number;accuracy:number;feasibility:number};rationale:string};
+export type CreativeConcept={photographicScene?:import('./photographic-scene.ts').PhotographicScene;strategy?:AdvertisingStrategy;id:string;title:string;idea:string;composition:string;camera:string;environment:string;lighting:string;hierarchy:string;layout:StaticConcept;copyId:string;evidenceIds:string[];scores:{impact:number;relevance:number;accuracy:number;feasibility:number};rationale:string};
 export type CreativeContext={facts:CreativeFact[];missing:string[];copyOptions:{id:string;headline:string;body:string;kind:'identity'|'creative-proposal'|'source'}[];controls:BriefControls;productName:string;grounding?:CreativeGrounding;observedCount?:number};
 export type PlanningMode='ai'|'basic';
 export type PlanningExecution={status:'validated';transport:'comfy-sdk'|'unverified-adapter';inference?:'fresh'|'cached'|'unverified';jobId?:string;responseSha256?:string};
@@ -34,6 +34,7 @@ export function validateCreativeInput(input:CreativeInput){
  if(input.source?.kind!=='original')throw Error('Choose the genuine saved original for Qwen planning.');
  if(!['campaign','closeup','enhancement'].includes(input.intent||'campaign')||!Object.hasOwn(staticSizes,input.format||'feed')||!str(input.request||'',2000)||!str(input.notes||'',3000))throw Error('Invalid creative request or format.');
  if(input.productId){const p=input.brand.products.find(p=>p.id===input.productId);if(!p)throw Error('Product does not belong to this brand.');if(!input.brand.assets.some(a=>a.assetId===input.source.id&&p.imageIds.includes(a.id)))throw Error('Associate this original with the product in Brand DNA, or choose no named product.');}
+ if(input.productEvidence&&(!validProductEvidence(input.productEvidence)||input.brand.products.find(p=>p.id===input.productId)?.discovery?.key!==input.productEvidence.productKey))throw Error('Product detail evidence does not belong to this selected product.');
  validateBriefInput(creativeBriefInput(input));return input;
 }
 export function creativeBriefInput(input:CreativeInput):BriefInput{
@@ -48,7 +49,10 @@ export function creativeContext(input:CreativeInput):CreativeContext{
  const facts:CreativeFact[]=[{id:'photo',text:[input.facts.description,input.facts.texture,input.facts.container,`Count: ${input.facts.count??'unknown'}. ${input.facts.arrangement}`].join('\n'),kind:input.facts.confirmed?'owner':'unconfirmed',sourceIds:[]}];
  for(const field of ['name','description','story','tone','visualStyle','positioning','audience','differentiators','guidelines','messaging','creativePreferences'] as const){const value=b.dna[field];if(!value?.trim())continue;const status=brandFieldStatus(b,field),o=b.research?.observations.find(o=>o.field===field);facts.push({id:'brand-'+field,text:value.slice(0,1000),kind:status==='inferred'?'inferred':status==='source'?'source':'owner',sourceIds:status==='user'||status==='reviewed'?[]:o?.sourceIds||[]});}
  if(context.products[0]){const p=context.products[0],proof=!p.overrides?.length&&p.discovery&&b.research&&researchSources(b.research).some(s=>s.id===p.discovery!.sourceId);facts.push({id:'product',text:p.name+': '+p.description+(p.sellingPoints?'\nSelling points ('+(p.overrides?.includes('sellingPoints')?'customer input':'website statement')+'): '+p.sellingPoints:''),kind:proof?'source':p.overrides?.length||!p.sourceUrl?'owner':'unconfirmed',sourceIds:proof?[p.discovery!.sourceId]:[]});}
- const missing=['name','description','tone','visualStyle'].filter(k=>!b.dna[k as keyof typeof b.dna]?.trim());if(!input.facts.confirmed)missing.push('photo observations need owner confirmation');
+ const selectedProduct=b.products.find(p=>p.id===input.productId);
+ const detail=input.productEvidence||(!selectedProduct?.overrides?.includes('description')?selectedProduct?.evidence:undefined);
+ if(detail)facts.push({id:'product-detail',text:detail.text,kind:'source',sourceIds:[detail.sha256]});
+ const missing=['name','description','tone','visualStyle'].filter(k=>!b.dna[k as keyof typeof b.dna]?.trim());if(!input.facts.confirmed)missing.push('photo observations need owner confirmation');if(input.productEvidence?.warning)missing.push(input.productEvidence.warning);
  // Copy is constrained to grounded identity/excerpts and clearly non-factual
  // creative language. The model cannot invent printed offers/ingredients/claims.
  // Brand messaging (taglines) is preferred when present — never hardcode a bakery line.
@@ -139,7 +143,7 @@ export function creativeConceptIssues(raw:unknown,context:CreativeContext):strin
  const ids=new Set<string>(),directions=new Set<string>(),issues:string[]=[],visual:CreativeConcept[]=[];
  for(const [index,c]of value.concepts.entries()){
   const prefix=`Concept ${index+1}: `;if(!c||typeof c!=='object'||Array.isArray(c)){issues.push(prefix+'Invalid concept identity.');continue;}
-  if(Object.keys(c).some(k=>!['id',...visualKeys,'layout','copyId','evidenceIds','scores','strategy'].includes(k))||!identity(c.id,60)||ids.has(c.id))issues.push(prefix+'Invalid concept identity/fields.');ids.add(c.id);
+  if(Object.keys(c).some(k=>!['id',...visualKeys,'layout','copyId','evidenceIds','scores','strategy','photographicScene'].includes(k))||!identity(c.id,60)||ids.has(c.id))issues.push(prefix+'Invalid concept identity/fields.');ids.add(c.id);
   let validVisual=true;for(const key of visualKeys){if(!str(c[key],key==='title'?100:700)||!c[key].trim()){issues.push(prefix+'Invalid creative direction: '+key);validVisual=false;}else if(unsupportedAssertion(c[key],key,context))issues.push(prefix+'Unsupported assertion: '+key);else if(/<[^>]+>/.test(c[key]))issues.push(prefix+'Unfilled schema example: '+key);}
   if(!['spotlight','editorial','poster'].includes(c.layout)||!context.copyOptions.some(o=>o.id===c.copyId)||!Array.isArray(c.evidenceIds)||!c.evidenceIds.length||c.evidenceIds.some(id=>!context.facts.some(f=>f.id===id&&f.kind!=='inferred'&&f.kind!=='unconfirmed')))issues.push(prefix+'Ungrounded concept/copy reference.');
   if(!c.scores||Array.isArray(c.scores)||Object.keys(c.scores).length!==4||(['impact','relevance','accuracy','feasibility'] as const).some(k=>!Number.isInteger(c.scores[k])||c.scores[k]<1||c.scores[k]>5))issues.push(prefix+'Invalid concept evaluation.');
@@ -151,7 +155,7 @@ export function creativeConceptIssues(raw:unknown,context:CreativeContext):strin
  }
  if(visual.length===3)issues.push(...conceptQuality(visual,context).issues,...strategySetIssues(visual));return issues;
 }
-const argumentFields=['title','idea','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proofId','proofQuote'] as const;
+const argumentFields=['title','idea','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proofId','proofQuote','photographicScene'] as const;
 /** Flatten nested strategy/proof so small local models emit valid JSON more reliably. */
 export function strategyFromFlatArgument(arg:any):AdvertisingStrategy{
  if(!arg||typeof arg!=='object')throw Error('Invalid advertising argument.');
@@ -174,8 +178,8 @@ export function conceptsFromArguments(value:any,input:CreativeInput,context:Crea
   if(typeof title!=='string'||title.trim().length<2||title.length>100)throw Error('Invalid argument title.');
   if(typeof idea!=='string'||idea.trim().length<12||idea.length>700)throw Error('Invalid marketing argument.');
   const issues=strategyIssues(strategy,context);if(issues.length)throw Error(issues.join(' '));
-  const visual={...templates[i%templates.length],...photographicDirection(input,context,strategy,i)};
-  return {...visual,id:'director-'+i,title:title.trim(),idea:idea.trim(),strategy,evidenceIds:[...new Set(strategy.proof.map(p=>p.id))],scores:{impact:3,relevance:3,accuracy:3,feasibility:3},rationale:'Marketing reasoning is stored separately with exact evidence citations; audience and feelings remain hypotheses. Physical direction is compiled from selected source observations and permitted camera/light relationships.'};
+  const visual={...templates[i%templates.length],...photographicDirection(input,context,strategy,i,arg.photographicScene)};
+  return {...visual,...(arg.photographicScene?{photographicScene:arg.photographicScene}:{}),id:'director-'+i,title:title.trim(),idea:idea.trim(),strategy,evidenceIds:[...new Set(strategy.proof.map(p=>p.id))],scores:{impact:3,relevance:3,accuracy:3,feasibility:3},rationale:'Marketing reasoning is stored separately with exact evidence citations; audience and feelings remain hypotheses. Photographic scenes are creative interpretations of cited evidence; source geometry, count and lettering locks remain authoritative.'};
  });
  const setIssues=strategySetIssues(concepts);if(setIssues.length)throw Error(setIssues.join(' '));
  return validateCreativeConcepts({concepts},context);

@@ -6,7 +6,8 @@ export type BrandField=typeof brandFields[number];
 export type BrandDNA=Record<DNAField,string>&Partial<Record<'messaging'|'creativePreferences',string>>;
 export const discoveryMethods=['json-ld','microdata','product-link','product-metadata','product-card','item-list','storefront-data'] as const;
 export type ProductDiscovery={key:string;sourceId:string;linked?:boolean;method:typeof discoveryMethods[number];imageUrls:string[]};
-export type BrandProduct={id:string;name:string;description:string;sellingPoints:string;sourceUrl?:string;imageIds:string[];discovery?:ProductDiscovery;overrides?:('name'|'description'|'sellingPoints')[]};
+export type ProductEvidence={scope?:'detail'|'catalog';warning?:string;version:1;productKey:string;url:string;title:string;text:string;sha256:string;fetchedAt:number};
+export type BrandProduct={evidence?:ProductEvidence;id:string;name:string;description:string;sellingPoints:string;sourceUrl?:string;imageIds:string[];discovery?:ProductDiscovery;overrides?:('name'|'description'|'sellingPoints')[]};
 export type BrandAsset={id:string;name:string;role:'logo'|'product'|'reference';productId?:string;assetId:string;sourceUrl?:string};
 export type BrandSource={id:string;url:string;title:string;text:string;sha256:string;fetchedAt:number};
 export type BrandObservation={field:string;value:string;kind:'source'|'inference';sourceIds:string[];quote?:string};
@@ -41,6 +42,7 @@ export function validateResearch(value:unknown):BrandResearch{
  if(r.products.some(p=>!p||typeof p.name!=='string'||p.name.length>200||typeof p.description!=='string'||p.description.length>5000||typeof p.sellingPoints!=='string'||p.sellingPoints.length>5000||(p.sourceUrl&&!publicLink(p.sourceUrl))))return fail();
  return r;
 }
+export function validProductEvidence(e:ProductEvidence){return !!e&&(!e.scope||['detail','catalog'].includes(e.scope))&&(!e.warning||typeof e.warning==='string'&&e.warning.length<=400)&&e.version===1&&typeof e.productKey==='string'&&/^[a-f0-9]{16}$/.test(e.productKey)&&publicLink(e.url)&&typeof e.title==='string'&&e.title.length<=300&&typeof e.text==='string'&&e.text.length>=12&&e.text.length<=4000&&/^[a-f0-9]{64}$/.test(e.sha256)&&Number.isFinite(e.fetchedAt);}
 export function validateBrand(value:unknown):BrandProfile{
  const b=value as BrandProfile,fail=()=>{throw Error('Invalid brand profile. Existing data was not overwritten.');};
  if(!b||b.version!==1||typeof b.id!=='string'||!b.id||!b.dna||typeof b.website!=='string'||(b.website&&!publicLink(b.website)))return fail();
@@ -50,7 +52,7 @@ export function validateBrand(value:unknown):BrandProfile{
  if(b.approvedFields&&(!Array.isArray(b.approvedFields)||b.approvedFields.some(f=>!brandFields.includes(f as BrandField))))return fail();
  if(b.palette&&(!validColors(b.palette.approved)||!validColors(b.palette.preferred)||b.palette.preferred.some(c=>!b.palette!.approved.includes(c))))return fail();
  if(!Array.isArray(b.colors)||b.colors.length>12||b.colors.some(c=>!/^#[a-f0-9]{6}$/i.test(c))||!Array.isArray(b.products)||b.products.length>100||!Array.isArray(b.assets)||b.assets.length>150||!Array.isArray(b.overrides)||b.overrides.some(s=>typeof s!=='string'))return fail();
- const ids=new Set<string>();for(const p of b.products){if(p.discovery&&!validDiscovery(p.discovery)||p.overrides&&(!Array.isArray(p.overrides)||p.overrides.some(k=>!['name','description','sellingPoints'].includes(k))))return fail();if(!p||typeof p.id!=='string'||ids.has(p.id)||typeof p.name!=='string'||p.name.length>200||typeof p.description!=='string'||p.description.length>5000||typeof p.sellingPoints!=='string'||p.sellingPoints.length>5000||!Array.isArray(p.imageIds)||p.imageIds.some(id=>typeof id!=='string')||(p.sourceUrl&&!publicLink(p.sourceUrl)))return fail();ids.add(p.id);}
+ const ids=new Set<string>();for(const p of b.products){if(p.evidence&&!validProductEvidence(p.evidence)||p.discovery&&!validDiscovery(p.discovery)||p.overrides&&(!Array.isArray(p.overrides)||p.overrides.some(k=>!['name','description','sellingPoints'].includes(k))))return fail();if(!p||typeof p.id!=='string'||ids.has(p.id)||typeof p.name!=='string'||p.name.length>200||typeof p.description!=='string'||p.description.length>5000||typeof p.sellingPoints!=='string'||p.sellingPoints.length>5000||!Array.isArray(p.imageIds)||p.imageIds.some(id=>typeof id!=='string')||(p.sourceUrl&&!publicLink(p.sourceUrl)))return fail();ids.add(p.id);}
  const assets=new Set<string>();for(const a of b.assets){if(!a||typeof a.id!=='string'||assets.has(a.id)||typeof a.assetId!=='string'||!a.assetId||typeof a.name!=='string'||!['logo','product','reference'].includes(a.role)||(a.productId&&!ids.has(a.productId))||(a.sourceUrl&&!publicLink(a.sourceUrl)))return fail();assets.add(a.id);}
  if(b.products.some(p=>p.imageIds.some(id=>!assets.has(id))))return fail();
  if(b.research)validateResearch(b.research);

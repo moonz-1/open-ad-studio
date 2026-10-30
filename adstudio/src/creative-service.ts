@@ -8,16 +8,17 @@ import {heroTakeFromDelivery} from './hero-delivery.ts';
 import type {CreativeInput,CreativePlan,CreativePrepared} from '../../shared/lib/creative-engine.ts';
 import {validateWebsiteSource} from '../../shared/lib/source-provenance.ts';
 import {creativeSnapshot} from '../../shared/lib/creative-engine.ts';
+import {productImageProof,validProductEvidence} from '../../shared/lib/brand.ts';
 import type {HeroSettings} from '../../shared/lib/hero-ad.ts';
 type Entry={id:string;created:number;sourceId:string;brandId:string;summary:string;provider:string;basisHero:string;previousHero?:HeroSettings;preparedId?:string};
-export type CreativeDraft={planningMode?:'ai'|'basic'} & Pick<CreativeInput,'facts'|'productType'|'request'|'intent'|'format'|'productId'|'constraints'|'seed'|'notes'> & {sourceId:string};
+export type CreativeDraft={planningMode?:'ai'|'basic'} & Pick<CreativeInput,'facts'|'productType'|'request'|'intent'|'format'|'productId'|'constraints'|'seed'|'notes'|'productEvidence'> & {sourceId:string};
 export type InspirationRecord={videoUrl:string;originalUrl?:string;sha256?:string;bytes?:number;duration?:number;width?:number;height?:number;rights:'inspiration-only'|'user-owned-or-licensed';/** Soundtrack rights are separate from video footage rights. */
  audioRights?:import('../../shared/lib/sound-director.ts').AudioRights;analysis?:import('../../shared/lib/reference-video.ts').ReferenceAnalysis;shotPlan?:import('../../shared/lib/reference-video.ts').CampaignShotPlan;productReplacementAvailable:false};
 /** Journey UI state + optional reference-video inspiration + per-take sound; both optional so older projects remain readable. */
 export type CreativeWorkspace={version:1;journey?:import('./journey-service.ts').JourneyState;generationEngine?:import('./generation-engines.ts').GenerationEngineId;plans:Entry[];activeId?:string;draft?:CreativeDraft;step?:'product'|'direction'|'result';websiteDraft?:string;onboarding?:{name:string;website:string};handoffs?:{planId:string;created:number;draft?:CreativeDraft;activeId?:string;step?:string;refinement?:{planId:string;text:string}}[];references?:Record<string,{sha256:string;facts:CreativeDraft['facts'];productType:CreativeDraft['productType']}>;inspiration?:InspirationRecord;/** Optional per video-take sound state; absent on older projects. */
  soundByTakeId?:Record<string,import('../../shared/lib/sound-director.ts').CampaignSoundState>;refinement?:{planId:string;text:string};adDrafts?:Record<string,Partial<Pick<import('../../shared/lib/static-ad.ts').StaticDesign,'headline'|'body'|'cta'|'size'>>>;adDraft?:{takeId:string;copy:Partial<Pick<import('../../shared/lib/static-ad.ts').StaticDesign,'headline'|'body'|'cta'|'size'>>}};
-type Client=Pick<typeof OSH,'upload'|'creativePlan'|'creativeSelect'|'creativeRefineComposition'|'creativePlanRecord'|'creativePrepare'|'creativeCompose'|'qwenHero'|'reimagineHero'>;
-type Options={planningMode?:'ai'|'basic'} & Partial<Pick<CreativeInput,'request'|'intent'|'format'|'seed'|'constraints'|'notes'|'productType'|'facts'|'productId'>>;
+type Client=Partial<Pick<typeof OSH,'productEvidence'>>&Pick<typeof OSH,'upload'|'creativePlan'|'creativeSelect'|'creativeRefineComposition'|'creativePlanRecord'|'creativePrepare'|'creativeCompose'|'qwenHero'|'reimagineHero'>;
+type Options={planningMode?:'ai'|'basic'} & Partial<Pick<CreativeInput,'request'|'intent'|'format'|'seed'|'constraints'|'notes'|'productType'|'facts'|'productId'|'productEvidence'>>;
 const hash=async(blob:Blob)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await blob.arrayBuffer()))).map(b=>b.toString(16).padStart(2,'0')).join('');
 export class CreativeStudioService{
  private planningController?:AbortController;
@@ -32,12 +33,26 @@ export class CreativeStudioService{
   const sha256=await hash(asset.normalized),originalSha256=await hash(asset.original),old=p.hero?.settings.briefDraft?.input;
   const facts=options.facts||(old?.source.id===sourceId&&old.source.sha256===sha256?old.facts:{description:'',arrangement:'',texture:'',container:'',confirmed:false});
   if(asset.provenance)validateWebsiteSource(asset.provenance,{sha256,originalSha256,brandId:brand.id,productId:options.productId});
-  return {asset,input:{version:1,projectId:p.id,brand,source:{id:sourceId,name:asset.name,kind:'original',sha256,originalSha256,...(asset.provenance?{provenance:structuredClone(asset.provenance)}:{})},facts:structuredClone(facts),productType:options.productType||(old?.source.id===sourceId?old.productType:'other'),request:options.request||'',notes:options.notes||'',intent:options.intent||'campaign',format:options.format||'feed',seed:options.seed??42,...(options.constraints?{constraints:options.constraints}:{}),...(options.productId?{productId:options.productId}:{})}};
+  return {asset,input:{version:1,projectId:p.id,brand,source:{id:sourceId,name:asset.name,kind:'original',sha256,originalSha256,...(asset.provenance?{provenance:structuredClone(asset.provenance)}:{})},facts:structuredClone(facts),productType:options.productType||(old?.source.id===sourceId?old.productType:'other'),request:options.request||'',notes:options.notes||'',intent:options.intent||'campaign',format:options.format||'feed',seed:options.seed??42,...(options.constraints?{constraints:options.constraints}:{}),...(options.productId?{productId:options.productId}:{}),...(options.productEvidence?{productEvidence:options.productEvidence}:{})}};
  }
  async plan(projectId:string,sourceId:string,options:Options={}):Promise<CreativePlan>{
   const p=await this.project(projectId),w=this.workspace(p);if(w.plans.length>=40)throw Error('This project has 40 saved plans. Use a new project; existing plans were kept.');
-  const controller=new AbortController();this.planningController=controller;let plan:CreativePlan;try{const {asset,input}=await this.context(p,sourceId,options),uploaded=await this.client.upload(await this.encode(asset.normalized));controller.signal.throwIfAborted();plan=await this.client.creativePlan({image:uploaded.url,input,planningMode:options.planningMode??'ai'},controller.signal);controller.signal.throwIfAborted();}finally{if(this.planningController===controller)this.planningController=undefined;}
-  const input=plan.input;if(w.draft)w.draft.planningMode=options.planningMode??'ai';
+  const controller=new AbortController();this.planningController=controller;let plan:CreativePlan;
+  try{
+   const selectedBrand=(await this.projects.brands()).find(b=>b.id===p.brandId),product=selectedBrand?.products.find(x=>x.id===options.productId);
+   let productEvidence=options.productEvidence||(!product?.overrides?.includes('description')?product?.evidence:undefined);
+   if(options.planningMode!=='basic'&&selectedBrand&&product?.discovery&&!productEvidence&&!product.overrides?.includes('description')&&this.client.productEvidence){
+    const image=product.discovery.imageUrls[0];
+    if(image){productEvidence=await this.client.productEvidence({productKey:product.discovery.key,research:productImageProof(selectedBrand,product.id,image)});controller.signal.throwIfAborted();
+     if(!validProductEvidence(productEvidence)||productEvidence.productKey!==product.discovery.key)throw Error('Selected product evidence could not be verified.');
+    }
+   }
+   // Evidence is bound to this plan, not written into the shared brand. Enriching a
+   // second product must not stale the first product's reviewed plan or paid image.
+   const {asset,input}=await this.context(p,sourceId,{...options,...(productEvidence?{productEvidence}:{})}),uploaded=await this.client.upload(await this.encode(asset.normalized));
+   controller.signal.throwIfAborted();plan=await this.client.creativePlan({image:uploaded.url,input,planningMode:options.planningMode??'ai'},controller.signal);controller.signal.throwIfAborted();
+  }finally{if(this.planningController===controller)this.planningController=undefined;}
+  const input=plan.input;if(w.draft){w.draft.planningMode=options.planningMode??'ai';w.draft.productEvidence=structuredClone(input.productEvidence);}
   w.plans.push({id:plan.id,created:plan.created,sourceId,brandId:input.brand.id,summary:plan.concepts.find(c=>c.id===plan.selectedId)!.idea,provider:plan.provider.mode,basisHero:JSON.stringify(p.hero?.settings)});w.activeId=plan.id;w.step='direction';await this.projects.save(p);return plan;
  }
  async open(projectId:string,planId:string){const p=await this.project(projectId);if(!this.workspace(p).plans.some(e=>e.id===planId))throw Error('Plan is not saved in this project.');return this.client.creativePlanRecord(planId,projectId);}
@@ -53,7 +68,7 @@ export class CreativeStudioService{
   if(creativeSnapshot({...plan.input,brand:input.brand,source:input.source,projectId:input.projectId})!==creativeSnapshot(plan.input))throw Error('Saved brand/source differs from this campaign. Re-export current context; no project data was changed.');
   w.handoffs??=[];w.handoffs.push({planId,created:Date.now(),draft:structuredClone(w.draft),activeId:w.activeId,step:w.step,refinement:structuredClone(w.refinement)});
   w.plans.push({id:plan.id,created:plan.created,sourceId:plan.input.source.id,brandId:plan.input.brand.id,summary:plan.concepts.find(c=>c.id===plan.selectedId)!.idea,provider:plan.provider.mode,basisHero:JSON.stringify(p.hero?.settings)});
-  const i=plan.input;w.draft={sourceId:i.source.id,facts:{...structuredClone(i.facts),confirmed:false},productType:i.productType,productId:i.productId,request:i.request||'',intent:i.intent||'campaign',format:i.format||'feed',seed:i.seed??42,notes:i.notes||'',constraints:structuredClone(i.constraints)};
+  const i=plan.input;w.draft={sourceId:i.source.id,facts:{...structuredClone(i.facts),confirmed:false},productType:i.productType,productId:i.productId,request:i.request||'',intent:i.intent||'campaign',format:i.format||'feed',seed:i.seed??42,notes:i.notes||'',constraints:structuredClone(i.constraints),...(i.productEvidence?{productEvidence:structuredClone(i.productEvidence)}:{})};
   w.activeId=plan.id;w.step='direction';w.refinement=undefined;await this.projects.save(p);return plan;
  }
  async choose(projectId:string,planId:string,conceptId:string,facts?:CreativeInput['facts']){const p=await this.project(projectId),w=this.workspace(p);if(!w.plans.some(e=>e.id===planId))throw Error('Plan is not saved in this project.');if(w.plans.length>=40)throw Error('This project already has 40 plans. Previous work was kept.');const plan=await this.client.creativeSelect({planId,projectId,conceptId,...(facts?{facts}: {})});w.plans.push({id:plan.id,created:plan.created,sourceId:plan.input.source.id,brandId:plan.input.brand.id,summary:plan.concepts.find(c=>c.id===plan.selectedId)!.idea,provider:plan.provider.mode,basisHero:JSON.stringify(p.hero?.settings)});w.activeId=plan.id;w.step='direction';await this.projects.save(p);return plan;}

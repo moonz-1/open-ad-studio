@@ -1,9 +1,10 @@
+import {sceneFields} from '../lib/photographic-scene.ts';
 // Strict JSON decoding with duplicate-key detection BEFORE JSON.parse can lose
 // duplicate members. Normalization is surrounding whitespace on known schema keys and declared
 // argument enum/ID values. No evidence quote, missing field or creative prose is repaired.
 export type KeyNormalization={path:string;from:string;to:string};
 const conceptKeys=['id','title','idea','composition','camera','environment','lighting','hierarchy','layout','copyId','evidenceIds','scores','rationale','strategy'];
-const argumentKeys=['focusId','mechanismId','title','idea','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proofId','proofQuote','strategy'];
+const argumentKeys=[...sceneFields,'focusId','mechanismId','title','idea','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proofId','proofQuote','strategy'];
 const strategyKeys=['version','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proof'];
 function allowedKeys(path:string[]):string[]{
  const joined=path.join('.');
@@ -42,7 +43,7 @@ export function parseCreativeResponse(raw:string):{value:unknown;normalizations:
      if(seen.has(key))throw Error('Duplicate/colliding planning key: '+[...path,key].join('.'));seen.add(key);
      if(key!==original)normalizations.push({path:path.join('.')||'$root',from:original,to:key});
      ws();if(s[at++]!==':')throw Error('Expected JSON colon.');result[key]=value([...path,key],depth+1);
-     if(path.join('.')==='arguments.*'&&['objective','focusId','mechanismId','proofId'].includes(key)&&typeof result[key]==='string'){
+     if(path.join('.')==='arguments.*'&&['objective','focusId','mechanismId','proofId','sceneEvidenceId'].includes(key)&&typeof result[key]==='string'){
       const originalValue=result[key] as string,trimmed=originalValue.trim();if(trimmed!==originalValue){normalizations.push({path:[...path,key].join('.'),from:originalValue,to:trimmed});result[key]=trimmed;}
      }ws();const end=s[at++];if(end==='}')return result;if(end!==',')throw Error('Invalid JSON object.');
     }

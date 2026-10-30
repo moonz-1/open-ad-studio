@@ -2,7 +2,7 @@ import {parse} from 'parse5';
 import {createHash} from 'node:crypto';
 import {type BrandResearch,type BrandSource,type BrandImage,type AnalysisProvider} from '../lib/brand.ts';
 import {validateResearch,canonicalAliasAllowed,researchSources} from '../lib/brand.ts';
-import {discoverProducts} from './brand-products.ts';
+import {discoverProducts,canonicalProductURL} from './brand-products.ts';
 import {readPublic,safeURL,BrandError} from './brand-web.ts';
 import {websitePalette} from '../lib/brand-colors.ts';
 import {analyzeBrand,brandBackendStatus} from './brand-analysis.ts';
@@ -134,4 +134,25 @@ export async function collectBrandImage(body:any,read=readPublic){
  if(!valid)throw new BrandError(422,'The website image was not a supported raster file.');
  // .png outputs are the existing image boundary; JPEG/WebP are transported privately as data URLs.
  return {image:'data:'+image.type+';base64,'+image.bytes.toString('base64'),requestedUrl:body.url,sourceUrl:image.url,contentType:image.type,sha256:createHash('sha256').update(image.bytes).digest('hex'),...(association?{association}:{})};
+}
+
+/** Fetch only the selected permalink, after re-proving its catalog relationship.
+ * Never replace image discovery or its historical hashes with this newer text evidence. */
+export async function collectProductEvidence(body:any,read=readPublic){
+ const r=validateResearch(body?.research),p=r.products.find(p=>p.discovery?.key===body?.productKey),d=p?.discovery,source=researchSources(r).find(s=>s.id===d?.sourceId);
+ if(!p?.sourceUrl||!d||!source)throw new BrandError(409,'Choose a product linked to saved website evidence.');
+ const catalog=await read(source.url),parsed=extractPage(catalog.bytes.toString('utf8'),catalog.url);
+ const linked=parsed.products.find(x=>x.discovery.key===d.key&&x.sourceUrl===p.sourceUrl);
+ if(!linked)throw new BrandError(409,'The website no longer proves this selected product. Existing facts were kept.');
+ const evidence=(page:Awaited<ReturnType<typeof readPublic>>,title:string,name:string,description:string,scope:'detail'|'catalog',warning?:string)=>({version:1 as const,productKey:d.key,url:page.url,title,text:(name+': '+description).slice(0,4000),sha256:createHash('sha256').update(page.bytes).digest('hex'),fetchedAt:Date.now(),scope,...(warning?{warning}:{})});
+ try{
+  const page=canonicalProductURL(catalog.url)===canonicalProductURL(p.sourceUrl)?catalog:await read(p.sourceUrl);
+  if(!['text/html','application/xhtml+xml'].includes(page.type)||new URL(page.url).origin!==new URL(source.url).origin)throw new BrandError(409,'Product description is not available on the verified website.');
+  const detail=extractPage(page.bytes.toString('utf8'),page.url),matches=detail.products.filter(x=>x.sourceUrl&&canonicalProductURL(x.sourceUrl)===canonicalProductURL(p.sourceUrl!)&&x.name.trim().toLowerCase()===p.name.trim().toLowerCase());
+  if(matches.length!==1||matches[0].description.trim().length<12)throw new BrandError(422,'No unambiguous product description was found.');
+  return evidence(page,detail.title,matches[0].name,matches[0].description,'detail');
+ }catch(error){
+  if(linked.description.trim().length<12)throw new BrandError(422,'No selected-product description was available. Add the real product details in your photograph summary, or use Basic draft. Existing work was kept.');
+  return evidence(catalog,parsed.title,linked.name,linked.description,'catalog','Detailed product page unavailable; using the verified catalog description. Add owner-supplied product details for a more specific direction.');
+ }
 }
