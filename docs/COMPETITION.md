@@ -21,7 +21,7 @@ The independent public clone at `3c922518` is public and MIT-licensed, with thir
 
 No model checkpoints or customer photographs are tracked at current HEAD. An actual empty-interface screenshot is included for documentation. The historical Field Study composite remains in public history. Follow-up found its original attribution to Content Pixie's Unsplash photograph and a separately generated Klein environment; the current Unsplash license permits modified distribution. No copyright blocker requiring history rewriting was established. See [the provenance follow-up](release/HARDENING.md).
 
-Incoming Comfy Cloud support is pending Cursor's verified handoff. No new Cloud image, paid inference, final visual quality or Cloud credit ceiling is certified by this audit. Keep local Qwen/Klein, Product-safe and separate RunPod routes intact during final integration.
+The committed native Comfy Cloud adapter is integrated with spending disabled by default. Full paid Journey acceptance remains unverified in this audit; no new Cloud image, final visual quality or hard credit ceiling is certified here. Local Qwen/Klein, Product-safe and separate RunPod routes are retained. See the current release status for the source checkpoint.
 
 ## Licensing distinctions
 

@@ -1,4 +1,6 @@
-﻿# Final hardening handoff
+# Final hardening handoff
+
+Current integration/publication authority and capability assessment: [STATUS.md](STATUS.md). Older pending-integration / approval statements below describe their original checkpoints.
 
 This follow-up supersedes the old Git-only installation restriction, unresolved Field Study copyright warning and unsafe credential-utility finding in the earlier staging audit.
 

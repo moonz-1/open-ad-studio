@@ -8,13 +8,15 @@ test('introduce gate asks for website or photo+name',()=>{
  assert.equal(introduceGate('https://example.com','',0),'');
  assert.equal(introduceGate('','Brand',1),'');
 });
-test('discover gate names missing description and permission',()=>{
- const src={permission:false,draft:{facts:{description:''}}};
- assert.match(discoverGate('Brand',[src]),/description/i);
- assert.match(discoverGate('Brand',[{...src,draft:{facts:{description:'a tray of cookies'}}}]),/permission/i);
- assert.equal(discoverGate('Brand',[{permission:true,draft:{facts:{description:'cookies'}}}]),'');
- assert.equal(sourceReady({permission:true,draft:{facts:{description:'ok'}}}),true);
- assert.match(sourceReviewLabel(src),/description/i);
+test('discover gate needs no typed description; one image-use acknowledgment covers every product',()=>{
+ const unnamed={permission:false,draft:{facts:{description:''}}},website={...unnamed,productName:'Green Cedar'};
+ assert.match(discoverGate('Brand',[unnamed],true),/Name your uploaded product/i,'Unknown upload still needs a name');
+ assert.match(discoverGate('Brand',[website,{...website,productName:'Rose'}]),/image use once/i);
+ assert.equal(discoverGate('Brand',[website,{...website,productName:'Rose'}],true),'','A single acknowledgment unlocks all products');
+ assert.equal(discoverGate('Brand',[{permission:true,draft:{facts:{description:'cookies'}}}]),'','Legacy confirmed sources stay ready');
+ assert.equal(sourceReady(website,true),true);
+ assert.equal(sourceReady(website,false),false);
+ assert.match(sourceReviewLabel(unnamed),/name/i);
 });
 test('direction and editions gates stay actionable without checkbox overload',()=>{
  assert.match(directionGate(false),/Choose one creative direction/i);

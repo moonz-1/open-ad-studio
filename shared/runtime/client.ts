@@ -9,6 +9,7 @@ export type ShotKey = { image: string; t: number; strength?: number };
 export type ProductVideoOptions = { image: string; background?: string; mode: 'locked' | 'camera'; ratio: '16:9' | '9:16' | '1:1'; duration: number; motion?: 'push' | 'pan-left' | 'pan-right' };
 export type ProductVideoResult = ShotResult & { width: number; height: number; mode: 'locked' | 'camera'; motion: string; protectedRect: { x: number; y: number; width: number; height: number } | null };
 import type { ModelChoice } from './model-catalog';
+import { creativePlanRequestMs } from '../lib/creative-deadline.ts';
 import type { ServerTiming } from './render-timings';
 export type LocalModels = { keyframe: ModelChoice[]; video: ModelChoice[]; geometry?:ModelChoice[]; audio?:{available:boolean;model:string}; timing: ServerTiming; research: { repo: string; revision: string; bytes: number }[]; inventory: { category: string; files: string[] }[] };
 
@@ -47,8 +48,8 @@ async function post<T>(name: string, body: unknown, signal?:AbortSignal): Promis
 
 export type HeroResult={url:string;width:number;height:number;sha256:string;sourceSha256:string;seconds:number;method:string;workflowSha256?:string;model?:string;jobId?:string;provenanceId?:string;originalSha256?:string};
 export const OSH = {
-  async creativeStatus(){const r=await fetch('/api/creative/status',{cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||r.statusText);return data as {available:boolean;model:string;reason:string;busy:boolean;fallback:string;imageGeneration:false};},
-  creativePlan:(body:{image:string;input:import('../lib/creative-engine').CreativeInput;planningMode?:'ai'|'basic'},signal?:AbortSignal)=>post<import('../lib/creative-engine').CreativePlan>('creative/plan',body,signal?AbortSignal.any([signal,AbortSignal.timeout(100000)]):AbortSignal.timeout(100000)),
+  async creativeStatus(){const r=await fetch('/api/creative/status',{cache:'no-store'});const data=await r.json();if(!r.ok)throw Error(data.error||r.statusText);return data as {available:boolean;model:string;reason:string;busy:boolean;wait?:boolean;deadlineMs?:number;fallback:string;imageGeneration:false};},
+  creativePlan:(body:{image:string;input:import('../lib/creative-engine').CreativeInput;planningMode?:'ai'|'basic'},signal?:AbortSignal)=>post<import('../lib/creative-engine').CreativePlan>('creative/plan',body,signal?AbortSignal.any([signal,AbortSignal.timeout(creativePlanRequestMs)]):AbortSignal.timeout(creativePlanRequestMs)),
   creativeSelect:(body:{planId:string;projectId:string;conceptId:string;facts?:import('../lib/product-brief').SourceFacts})=>post<import('../lib/creative-engine').CreativePlan>('creative/select',body),
   creativeRefineComposition:(body:{planId:string;projectId:string;text:string})=>post<import('../lib/creative-engine').CreativePlan>('creative/refine-composition',body),
   async creativePlanRecord(planId:string,projectId:string){const r=await fetch('/api/creative/plan/'+encodeURIComponent(planId)+'?projectId='+encodeURIComponent(projectId),{cache:'no-store',signal:AbortSignal.timeout(10000)});const d=await r.json();if(!r.ok)throw Error(d.error||r.statusText);return d as import('../lib/creative-engine').CreativePlan;},
@@ -57,7 +58,7 @@ export const OSH = {
   creativeCompose:(body:{planId:string;preparedId:string;projectId:string;hero:string;provenanceId:string;heroAssetId:string;logo?:string;logoAssetId?:string;fidelityReviewed:boolean;copy?:Partial<Pick<import('../lib/static-ad').StaticDesign,'headline'|'body'|'cta'|'size'>>})=>post<{url:string;width:number;height:number;sha256:string;sources:Record<string,string>;design:import('../lib/static-ad').StaticDesign}>('creative/compose',body),
   captions:(audio:string,model?:string,device?:string,language='auto')=>post<{model:string;language:string|null;duration:number;seconds:number;segments:import('../lib/captions').CaptionSegment[];srt?:string|null}>('captions',{audio,model,device,language}),
   adBackground:(body:{requestId:string;projectId:string;planId:string;preparedId:string;image:string;current:import('../lib/creative-engine').CreativeInput})=>post<import('../lib/ad-background').AdBackground>('hero/background',body),
-  adScene:(body:{promptSha256:string;requestId:string;projectId:string;planId:string;preparedId:string;image:string;current:import('../lib/creative-engine').CreativeInput;engine?:'klein'|'flux3';identityImage?:string})=>post<import('../lib/ad-scene').AdScene>('hero/scene',body),
+  adScene:(body:{promptSha256:string;requestId:string;projectId:string;planId:string;preparedId:string;image:string;current:import('../lib/creative-engine').CreativeInput;engine?:'klein'|'flux3'|'flux3-cloud';identityImage?:string})=>post<import('../lib/ad-scene').AdScene>('hero/scene',body),
   adCampaign:(body:{promptSha256:string;requestId:string;projectId:string;planId:string;preparedId:string;image:string;current:import('../lib/creative-engine').CreativeInput})=>post<import('../lib/ad-scene').AdScene>('hero/campaign',body),
   cancelBackground:(requestId:string,projectId:string)=>post<{cancellationRequested:boolean}>('hero/background/cancel',{requestId,projectId}),
   qwenHero:(image:string,settings:import('../lib/hero-ad').HeroSettings,original:string,projectId?:string)=>post<HeroResult>('hero/qwen',{image,settings,original,...(projectId?{projectId}:{})}),

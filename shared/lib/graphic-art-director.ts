@@ -36,6 +36,8 @@ export type PhotoLayoutHints={
  copySafe?:NormRect;
  /** Mean luminance 0–1 for candidate zones (optional pixel analysis). */
  zones?:{id:string;box:NormRect;meanLuma:number;variance:number}[];
+ /** Cover placement of the source photo in target pixels (product-aware crop). */
+ crop?:PixelRect;
 };
 
 export type GraphicTypeSpec={
@@ -61,8 +63,8 @@ export type GraphicArtPlan={
  accentRule:boolean;
  /** Soft readability field. Prefer column-local veils so the photograph stays the hero. */
  veil:{top:number;bottom:number;strength:number;mode:'band'|'column';column?:PixelRect};
- typography:{brand:GraphicTypeSpec;headline:GraphicTypeSpec;body:GraphicTypeSpec;cta:GraphicTypeSpec};
- placement:{brand:PixelRect;headline:PixelRect;body?:PixelRect;cta?:PixelRect};
+ typography:{brand:GraphicTypeSpec;productLine?:GraphicTypeSpec;headline:GraphicTypeSpec;body:GraphicTypeSpec;cta:GraphicTypeSpec};
+ placement:{brand:PixelRect;productLine?:PixelRect;headline:PixelRect;body?:PixelRect;cta?:PixelRect};
  productAvoid:PixelRect;
 };
 
@@ -275,13 +277,15 @@ export function planGraphicArt(
  const bodyType=typeFor(strategy,'body',w,h);
  const ctaType=typeFor(strategy,'cta',w,h);
  const headLines=Math.max(1,Math.min(3,Math.ceil((d.headline||'').trim().split(/\s+/).length/3)));
+ const lineType:GraphicTypeSpec|undefined=d.productLine?.trim()?{...headlineType,size:Math.round(headlineType.size*0.5),weight:Math.max(600,headlineType.weight),tracking:Math.max(1.2,headlineType.size*0.03),lineHeight:1.1,transform:'uppercase',align:headlineType.align}:undefined;
+ const lineH=lineType?Math.round(lineType.size*1.3):0,lineGap=lineType?Math.round(lineType.size*0.7):0;
 
- // Optical stack: brand → air → headline → air → body as one column in the copy-safe zone.
+ // Optical stack: brand → product line → headline → air → body as one column in the copy-safe zone.
  const brandGap=Math.round(brandType.size*1.15);
  const headGap=Math.round(Math.max(12,bodyType.size*0.7));
  let headBox=clampRect({
   x:Math.round(anchor.x*w),
-  y:Math.round(anchor.y*h)+(els.showBrand?Math.round(brandType.size*2.8):0),
+  y:Math.round(anchor.y*h)+(els.showBrand?Math.round(brandType.size*2.8):0)+(lineType?lineH+lineGap:0),
   width:Math.round(Math.min(anchor.width*w,w*(strategy==='refined-product'||strategy==='playful-expressive'?0.58:0.5))),
   height:Math.round(Math.min(anchor.height*h*0.78,headlineType.size*headlineType.lineHeight*(headLines+0.35)))
  },w,h,m);
@@ -300,19 +304,21 @@ export function planGraphicArt(
 
  // Brand sits above the headline with a hard optical gap — never collide after clamping.
  const brandH=Math.round(brandType.size*1.5);
- const brandYIdeal=Math.max(m,headBox.y-brandH-Math.round(brandGap*0.85));
+ const stackTop=()=>headBox.y-(lineType?lineH+lineGap:0);
+ const brandYIdeal=Math.max(m,stackTop()-brandH-Math.round(brandGap*0.85));
  let brandBox:PixelRect={
   x:headBox.x,
   y:brandYIdeal,
   width:Math.min(headBox.width,Math.round(w*0.42)),
   height:brandH
  };
- if(brandBox.y+brandBox.height+8>headBox.y){
+ if(brandBox.y+brandBox.height+8>stackTop()){
   // Push headline down rather than stacking glyphs on top of each other.
-  const shift=brandBox.y+brandBox.height+Math.round(brandType.size*0.9)-headBox.y;
+  const shift=brandBox.y+brandBox.height+Math.round(brandType.size*0.9)-stackTop();
   headBox=clampRect({...headBox,y:headBox.y+Math.max(0,shift)},w,h,m);
-  brandBox={...brandBox,y:Math.max(m,headBox.y-brandH-Math.round(brandGap*0.85))};
+  brandBox={...brandBox,y:Math.max(m,stackTop()-brandH-Math.round(brandGap*0.85))};
  }
+ const productLineBox:PixelRect|undefined=lineType?{x:headBox.x,y:stackTop(),width:headBox.width,height:lineH}:undefined;
 
  let bodyBox:PixelRect|undefined;
  if(els.showBody){
@@ -395,8 +401,8 @@ export function planGraphicArt(
    mode:'column',
    column
   },
-  typography:{brand:brandType,headline:headlineType,body:bodyType,cta:ctaType},
-  placement:{brand:brandBox,headline:headBox,body:bodyBox,cta:ctaBox},
+  typography:{brand:brandType,...(lineType?{productLine:lineType}:{}),headline:headlineType,body:bodyType,cta:ctaType},
+  placement:{brand:brandBox,...(productLineBox?{productLine:productLineBox}:{}),headline:headBox,body:bodyBox,cta:ctaBox},
   productAvoid
  };
 }

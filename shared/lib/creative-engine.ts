@@ -8,6 +8,7 @@ import {heroDefaults,type HeroSettings} from './hero-ad.ts';
 import {newStaticDesign,staticSizes,staticSVG,luminance,type StaticDesign,type StaticConcept} from './static-ad.ts';
 import {creativeGrounding,conceptQuality,conceptConstraintIssues,conceptRecommendation,type CreativeGrounding} from './creative-direction.ts';
 import {presentationMode} from './campaign-presentation.ts';
+import {claimEvidence} from './claim-repair.ts';
 import type {CompositionPlan} from './composition-dynamics.ts';
 import {buildCompositionPlan,applyDynamicsToConcept,refineCreativeComposition,parseCompositionRefinement} from './composition-dynamics.ts';
 export {parseCompositionRefinement,buildCompositionPlan,compositionPlanPrompt,refineCompositionPlan} from './composition-dynamics.ts';
@@ -17,7 +18,7 @@ export type CreativeConcept={strategy?:AdvertisingStrategy;id:string;title:strin
 export type CreativeContext={facts:CreativeFact[];missing:string[];copyOptions:{id:string;headline:string;body:string;kind:'identity'|'creative-proposal'|'source'}[];controls:BriefControls;productName:string;grounding?:CreativeGrounding;observedCount?:number};
 export type PlanningMode='ai'|'basic';
 export type PlanningExecution={status:'validated';transport:'comfy-sdk'|'unverified-adapter';inference?:'fresh'|'cached'|'unverified';jobId?:string;responseSha256?:string};
-export type CreativePlan={brief?:import('./creative-brief.ts').CreativeBriefV2;version:1;id:string;parentId?:string;projectId:string;created:number;input:CreativeInput;provider:{origin?:'model'|'authored'|'basic';execution?:PlanningExecution;planningVersion?:2;mode:'local-ai'|'deterministic';model?:string;reason:string;contribution?:{bindings?:import('./planning-visual-contract.ts').PhotographicBinding[];format:string;modelFields:string[];appFields:string[]}};context:CreativeContext;concepts:(CreativeConcept&{evaluation:{score:number;method:string}})[];selectedId:string;selectionReason:string;draft:GenerationDraft;composition:StaticDesign;/** Structured spatial direction for still/video generation; optional on legacy plans. */dynamics?:CompositionPlan;layout:{width:number;height:number;photoBox:{x:number;y:number;width:number;height:number};textBounds:{text:string;x:number;y:number;width:number;height:number;fontSize:number}[];fit:'contain';exportIntent:'png'};warnings:string[];reviewRequired:true;generationRun:false};
+export type CreativePlan={brief?:import('./creative-brief.ts').CreativeBriefV2;version:1;id:string;parentId?:string;projectId:string;created:number;input:CreativeInput;provider:{origin?:'model'|'authored'|'basic';execution?:PlanningExecution;planningVersion?:2;mode:'local-ai'|'deterministic';model?:string;reason:string;contribution?:{bindings?:import('./planning-visual-contract.ts').PhotographicBinding[];claimRepairs?:import('./claim-repair.ts').ClaimRepair[];format:string;modelFields:string[];appFields:string[]}};context:CreativeContext;concepts:(CreativeConcept&{evaluation:{score:number;method:string}})[];selectedId:string;selectionReason:string;draft:GenerationDraft;composition:StaticDesign;/** Structured spatial direction for still/video generation; optional on legacy plans. */dynamics?:CompositionPlan;layout:{width:number;height:number;photoBox:{x:number;y:number;width:number;height:number};textBounds:{text:string;x:number;y:number;width:number;height:number;fontSize:number}[];fit:'contain';exportIntent:'png'};warnings:string[];reviewRequired:true;generationRun:false};
 export type CreativePrepared={brief?:import('./creative-brief.ts').CreativeBriefV2;version:1;planId:string;preparedId:string;projectId:string;draft:GenerationDraft;composition:StaticDesign;payload:{image:string;original:string;settings:HeroSettings;projectId:string};status:'REVIEWED_REQUEST_NOT_A_RUN';generationRun:false;paidApproved:false;privateUploadApproved:false};
 const identity=(s:unknown,max=160)=>typeof s==='string'&&/^[A-Za-z0-9_-]+$/.test(s)&&s.length<=max;
 const str=(s:unknown,max:number)=>typeof s==='string'&&s.length<=max;
@@ -117,6 +118,17 @@ const visualKeys=['title','idea','composition','camera','environment','lighting'
 // Text proposals are not business facts. Refuse common unsupported physical /
 // commercial assertions; copy itself uses only the closed grounded catalog.
 const unsafe=/[$€£%]|\b(organic|vegan|gluten.free|sugar.free|certified|award.winning|guaranteed|sale|discount|free shipping|daily fresh|fresh daily|add ingredients|extra products|duplicate products|new logo|redesign the product|change the label|garnish|sprinkle|topped with|add steam|steaming hot)\b/i;
+// Model-authored title/idea may repeat owner/source wording verbatim (for example
+// "100% Natural Perfume"); app-compiled photographic fields stay strictly unsafe-free.
+function unsupportedAssertion(text:string,key:string,context:CreativeContext){
+ if(!unsafe.test(text))return false;if(key!=='title'&&key!=='idea')return true;
+ const evidence=claimEvidence(context),norm=(s:string)=>s.toLowerCase().replace(/[-\s]+/g,' ').trim();
+ for(const m of text.matchAll(new RegExp(unsafe.source,'gi'))){
+  const token=/^[$€£%]$/.test(m[0])?(text.slice(0,m.index).match(/\S*$/)![0]+text.slice(m.index).match(/^\S*/)![0]).replace(/^[^\w$€£%]+|[^\w$€£%]+$/g,''):m[0];
+  if(!evidence.includes(norm(token)))return true;
+ }
+ return false;
+}
 export function validateCreativeConcepts(raw:unknown,context:CreativeContext):CreativeConcept[]{
  const issues=creativeConceptIssues(raw,context);if(issues.length)throw Error(issues.join(' '));return structuredClone((raw as {concepts:CreativeConcept[]}).concepts);
 }
@@ -128,7 +140,7 @@ export function creativeConceptIssues(raw:unknown,context:CreativeContext):strin
  for(const [index,c]of value.concepts.entries()){
   const prefix=`Concept ${index+1}: `;if(!c||typeof c!=='object'||Array.isArray(c)){issues.push(prefix+'Invalid concept identity.');continue;}
   if(Object.keys(c).some(k=>!['id',...visualKeys,'layout','copyId','evidenceIds','scores','strategy'].includes(k))||!identity(c.id,60)||ids.has(c.id))issues.push(prefix+'Invalid concept identity/fields.');ids.add(c.id);
-  let validVisual=true;for(const key of visualKeys){if(!str(c[key],key==='title'?100:700)||!c[key].trim()){issues.push(prefix+'Invalid creative direction: '+key);validVisual=false;}else if(unsafe.test(c[key]))issues.push(prefix+'Unsupported assertion: '+key);else if(/<[^>]+>/.test(c[key]))issues.push(prefix+'Unfilled schema example: '+key);}
+  let validVisual=true;for(const key of visualKeys){if(!str(c[key],key==='title'?100:700)||!c[key].trim()){issues.push(prefix+'Invalid creative direction: '+key);validVisual=false;}else if(unsupportedAssertion(c[key],key,context))issues.push(prefix+'Unsupported assertion: '+key);else if(/<[^>]+>/.test(c[key]))issues.push(prefix+'Unfilled schema example: '+key);}
   if(!['spotlight','editorial','poster'].includes(c.layout)||!context.copyOptions.some(o=>o.id===c.copyId)||!Array.isArray(c.evidenceIds)||!c.evidenceIds.length||c.evidenceIds.some(id=>!context.facts.some(f=>f.id===id&&f.kind!=='inferred'&&f.kind!=='unconfirmed')))issues.push(prefix+'Ungrounded concept/copy reference.');
   if(!c.scores||Array.isArray(c.scores)||Object.keys(c.scores).length!==4||(['impact','relevance','accuracy','feasibility'] as const).some(k=>!Number.isInteger(c.scores[k])||c.scores[k]<1||c.scores[k]>5))issues.push(prefix+'Invalid concept evaluation.');
   if(c.strategy)issues.push(...strategyIssues(c.strategy,context).map(s=>prefix+s));

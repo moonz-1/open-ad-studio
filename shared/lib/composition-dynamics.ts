@@ -119,9 +119,9 @@ function arrangementFor(input:CreativeInput,lane:SensoryLane,concept:CreativeCon
 function cameraFor(lane:SensoryLane,controls:CreativePlan['context']['controls'],concept:CreativeConcept){
  if(controls.angle==='none')return {viewpoint:'Match the source viewpoint.',distance:'Match source scale.',framing:clip(concept.composition,160),lensFeel:'Natural photographic perspective.'};
  // Avoid forbidden viewpoint tokens (overhead/profile) even in negations — preflight scans the camera string.
- if(lane==='indulgent-food')return {viewpoint:'Slightly elevated three-quarter tabletop, only where supported by the reference.',distance:'Close enough to read the actually observed surface; full product height visible.',framing:clip(concept.composition,160)||'Compact hero slightly below centre with open upper copy field.',lensFeel:'Shallow depth; tactile food editorial — prefer viewpoints the identity reference can support.'};
+ if(lane==='indulgent-food')return {viewpoint:'Slightly elevated three-quarter tabletop, only where supported by the reference.',distance:'Close enough to read the actually observed surface; full product height visible.',framing:clip(concept.composition,160)||'Compact hero slightly below centre with empty upper open field.',lensFeel:'Shallow depth; tactile food editorial — prefer viewpoints the identity reference can support.'};
  if(lane==='refined-object')return {viewpoint:'Controlled three-quarter that reveals real geometry.',distance:'Product-dominant with architectural breathing room.',framing:clip(concept.composition,160)||'Asymmetric hero with graphic negative space.',lensFeel:'Precise, low distortion, material-accurate reflections.'};
- return {viewpoint:clip(concept.camera,160),distance:'Product-readable — keep the complete product silhouette inside the frame with breathing room.',framing:clip(concept.composition,160)||'Full-product hero with intentional negative space for typography.',lensFeel:'Believable commercial still.'};
+ return {viewpoint:clip(concept.camera,160),distance:'Product-readable — keep the complete product silhouette inside the frame with breathing room.',framing:clip(concept.composition,160)||'Full-product hero with intentional empty open field.',lensFeel:'Believable commercial still.'};
 }
 
 /** Evidence-driven placement — vary by concept signals, never hardcode fragrance→right / bakery→center. */
@@ -151,12 +151,13 @@ export function planCompositionLayout(
  else if(energy==='restrained')placementBias='lower-center';
  else placementBias=lane==='indulgent-food'?'lower-center':'lower-left';
 
- // Premium heroes default to dominant product scale — postage-stamp products fail later gates.
+  // Premium heroes need intentional scale — food trays default balanced so full pastry stays inside with margin.
  const productScale:ProductScale=
   framingMode==='intentional-closeup'?'intimate':
   /\b(wide set|environmental wide|tiny product|distant hero|lifestyle wide)\b/.test(blob)?'balanced':
+  /\b(tray|cinnamon.?roll|pastry grouping|full tray)\b/.test(blob)||lane==='indulgent-food'?'balanced':
   /\b(closer|dominant|fill|large|prominen|hero scale)\b/.test(blob)
-  ||lane==='refreshing-scent'||lane==='refined-object'||lane==='indulgent-food'||lane==='comfort-care'
+  ||lane==='refreshing-scent'||lane==='refined-object'||lane==='comfort-care'
    ?'dominant':'balanced';
 
  /** Larger product-safe zones for intentional prominence; still leave ≥8% canvas margin. */
@@ -194,11 +195,11 @@ export function productSafeZone(placementBias:PlacementBias,productScale:Product
 
 export function heroPlacementProse(layout:CompositionLayout):string{
  const map:Record<PlacementBias,string>={
-  'lower-left':'Lower-left hero with calm right/upper field for lettering — complete product inside frame with breathing room.',
-  'lower-right':'Lower-right hero with calm left/upper field for lettering — complete product inside frame with breathing room.',
-  'lower-center':'Lower-centre hero with balanced side margins and open upper lettering band — full silhouette visible.',
-  'mid-left':'Mid-left hero with open right column for typography — product fully inside frame.',
-  'center':'Centred hero with equal margins and open upper band — full product readable.',
+  'lower-left':'Lower-left hero with calm empty right/upper open field — complete product inside frame with breathing room.',
+  'lower-right':'Lower-right hero with calm empty left/upper open field — complete product inside frame with breathing room.',
+  'lower-center':'Lower-centre hero with balanced side margins and empty upper open band — full silhouette visible.',
+  'mid-left':'Mid-left hero with empty right column of unlettered materials — product fully inside frame.',
+  'center':'Centred hero with equal margins and empty upper band — full product readable.',
  };
  return map[layout.placementBias];
 }
@@ -219,7 +220,7 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
   ?{beats:[
     {at:'0-2s',attention:'Establish spatial hierarchy and product recognition.',change:'Restrained camera or light shift; keep identity anchors stable.'},
     {at:'2-4s',attention:'Resolve on the clearest product reading.',change:'Hold or cut to recognition frame; no invented product action.'},
-    {at:'end',attention:'Brand/typography zone remains clear.',change:'Separate end card; do not bake logos into pixels.'},
+    {at:'end',attention:'Open field remains clear and unlettered.',change:'Separate end treatment outside the photograph; do not bake logos into pixels.'},
    ]}
   :{beats:[{at:'still',attention:'Immediate product recognition and advertising idea.',change:'Single decisive arrangement; no temporal progression.'}]};
  return {
@@ -235,8 +236,8 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
   frame:{
    heroPlacement:heroPlacementProse(layout),
    depth:lane==='refined-object'?'Controlled layered depth; geometric light falloff.':lane==='indulgent-food'?'Tactile near-field product; soft environmental depth behind.':layout.balanceNote,
-   negativeSpace:clip(concept.hierarchy,180)||`Reserve copy-safe region (${Math.round(layout.copySafe.x*100)}%,${Math.round(layout.copySafe.y*100)}%) for typography; keep product fully inside product-safe zone.`,
-   hierarchy:clip(concept.hierarchy,200)||'Product first; supports never impersonate the product; type later in the planned copy-safe zone.',
+   negativeSpace:clip(concept.hierarchy,180)||`Keep open field (${Math.round(layout.copySafe.x*100)}%,${Math.round(layout.copySafe.y*100)}%) as empty unlettered materials; keep product fully inside product-safe zone.`,
+   hierarchy:clip(concept.hierarchy,200)||'Product first; supports never impersonate the product; open field stays blank (no writing or symbols).',
    energy,
   },
   camera:{
@@ -262,7 +263,7 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
    allowed:policy!=='preserve'&&controls.creativity!=='low',
    note:policy==='preserve'?'No invented supports that alter packaging geometry.':'Minimal brand-appropriate supports only when they serve the advertising idea.',
   },
-  typography:{safeRegion:`Normalized copy-safe ${JSON.stringify(layout.copySafe)}; keep free of competing product mass.`},
+  typography:{safeRegion:`Normalized open field ${JSON.stringify(layout.copySafe)}; empty unlettered materials only — no writing, symbols or posters.`},
   layout,
   progression,
   acceptance:[
@@ -272,7 +273,7 @@ export function buildCompositionPlan(plan:CreativePlan,mode:CompositionMode='sta
    'Environment is one continuous photograph with soft grounded contact shadow; no floating cutouts, flat colour voids, or hard synthetic shelves.',
    'Arrangement matches the planned spatial relationships and product-safe zone.',
    'Composition serves the advertising idea and intended response.',
-   'Typography-safe region remains usable after generation.',
+   'Open field remains blank (unlettered) after generation.',
    'No unsupported product claims appear as facts.',
   ],
 };
@@ -291,7 +292,7 @@ export function compositionPlanPrompt(dynamics:CompositionPlan){
   `Light: ${dynamics.light.key} Atmosphere: ${dynamics.light.atmosphere}`,
   `Brand tone: ${dynamics.brand.tone}. Flexibility: ${dynamics.brand.flexibility}. Constraints: ${dynamics.brand.constraints.join(' ')}`,
   `Supports: ${dynamics.supports.allowed?dynamics.supports.note:'None beyond disclosed product surfaces.'}`,
-  `Typography-safe region: ${dynamics.typography.safeRegion}`,
+  `Open field (unlettered): ${dynamics.typography.safeRegion}`,
   dynamics.mode==='video-progression'
    ?`Shot progression: ${dynamics.progression.beats.map(b=>`${b.at}: ${b.attention} (${b.change})`).join(' · ')}`
    :`Still delivery: ${dynamics.progression.beats[0]?.attention||'One compelling arrangement.'}`,
@@ -324,7 +325,7 @@ export function parseCompositionRefinement(text:string):RefinementPatch{
  if(/closer|bring .+ closer|tighter crop|fill the frame/.test(t)){patch.distance='Move closer: product fills more of the frame while identity anchors stay complete.';patch.framing='Tighter product-dominant framing with reduced peripheral set.';}
  if(/depth|separation|layers|foreground/.test(t)){patch.depth='Increase foreground/mid/background separation; keep the hero sharp against softer depth.';}
  if(/energetic|energy|dynamic|bold/.test(t)){patch.energy='dynamic';patch.heroPlacement='Energetic off-centre hero with graphic diagonals.';}
- if(/negative space|more copy|space for (copy|type|lettering)|breathing room/.test(t)){patch.negativeSpace='Expand calm negative space for typography; reduce competing mid-ground detail.';patch.framing='Leave a generous open field adjacent to the hero for lettering.';patch.energy=patch.energy||'restrained';}
+ if(/negative space|more copy|space for (copy|type|lettering)|breathing room/.test(t)){patch.negativeSpace='Expand calm empty open field; reduce competing mid-ground detail; keep surfaces unlettered.';patch.framing='Leave a generous empty open field adjacent to the hero with no writing or symbols.';patch.energy=patch.energy||'restrained';}
  if(/restrain|calmer|quieter|minimal|less busy/.test(t)){patch.energy='restrained';patch.arrangement='Simplify grouping; fewer competing angles; clearer single hero.';}
  if(/like this brand|more brand|brand.feel|on.brand/.test(t)){patch.atmosphere='Lean harder into disclosed brand tone and visual style; avoid generic stock mood.';}
  if(/overhead|top.?down|flat.?lay/.test(t)){patch.viewpoint='True overhead flat-lay on a continuous plane.';}

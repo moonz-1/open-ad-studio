@@ -86,6 +86,7 @@ import {createBrandService} from './brand-service.ts';
 import {campaignAvailability,renderProductCampaign} from './product-campaign.ts';
 import {sceneAvailability,renderKleinScene,validateSceneRequest,validateCampaignRequest} from './klein-scene.ts';
 import {flux3Availability,flux3InferenceAuthorized,renderFlux3KleinScene} from './flux3-klein-scene.ts';
+import {comfyCloudFluxAvailability,renderFlux3ComfyCloudScene} from './comfy-cloud-flux.ts';
 import {ensureFluxGpuSession,releaseFluxGpuSession,resumeFluxLeaseGuard,planFluxProvision,CUSTOMER_STAGES,type FluxSession} from './runpod-flux-controller.ts';
 import {autoprovEnabled,liveProvisionAuthorized} from './runpod-flux-budget.ts';
 import {kleinAvailability,renderKleinBackground,validateBackgroundRequest,releaseKleinCache} from './klein-background.ts';
@@ -203,6 +204,15 @@ function serialize<T>(fn: () => Promise<T>): Promise<T> {
   queued++;
   const run = chain.then(fn, fn).finally(() => queued--);
   chain = run.catch(() => {});
+  return run;
+}
+// Comfy Cloud renders remotely: one Cloud job at a time, independent of the local GPU queue.
+let cloudChain: Promise<unknown> = Promise.resolve(),cloudQueued = 0,textJobs = 0;
+function serializeCloud<T>(fn: () => Promise<T>): Promise<T> {
+  if (cloudQueued >= MAX_QUEUE) throw new HttpError(429, "Comfy Cloud is busy with earlier requests; try again when they finish.");
+  cloudQueued++;
+  const run = cloudChain.then(fn, fn).finally(() => cloudQueued--);
+  cloudChain = run.catch(() => {});
   return run;
 }
 
@@ -717,7 +727,8 @@ function middleware(env: Env,setup:RuntimeSetup,rewriter:PromptRewriter,creative
          Object.assign(flux3,{runpodAutoprov:true,reason:(flux3.reason?flux3.reason+' ':'')+(planned.plan.createBlockedReason||planned.gate.reason||'RunPod auto-provision armed in dry-run mode.')});
         }
        }catch(e:any){runpod={error:String(e.message||e)};}
-       return send(res,200,{finish:true,reimagine,experimental:true,qwen,zimage,klein,flux3,runpod,vramFreeBytes:typeof vramFreeBytes==='number'?vramFreeBytes:null,comfyConnected:!!stats,busy});
+       const flux3Cloud=await comfyCloudFluxAvailability(env).catch((e:any)=>({available:false,authorized:false,reason:String(e.message||e)}));
+       return send(res,200,{finish:true,reimagine,experimental:true,qwen,zimage,klein,flux3,flux3Cloud,runpod,vramFreeBytes:typeof vramFreeBytes==='number'?vramFreeBytes:null,comfyConnected:!!stats,busy});
       }
       if(route==='GET /api/hero/flux3/runpod'){
        const planned=await planFluxProvision(env);
@@ -745,7 +756,33 @@ function middleware(env: Env,setup:RuntimeSetup,rewriter:PromptRewriter,creative
       if(route==='POST /api/hero/background/cancel'){const body=await readBody(req),job=kleinJobs.get(body.requestId);if(!job||job.projectId!==body.projectId)return send(res,404,{error:'No matching local background job.'});job.controller.abort(new Error('Owner cancelled the local AI background job.'));return send(res,200,{cancellationRequested:true,terminated:false});}
       if(route==='POST /api/hero/background'||route==='POST /api/hero/scene'||route==='POST /api/hero/campaign')return send(res,200,await tracked(async body=>{
        creativeTextRouting(env);const scene=route==='POST /api/hero/scene',campaign=route==='POST /api/hero/campaign',checked=await (campaign?validateCampaignRequest:scene?validateSceneRequest:validateBackgroundRequest)(OUTPUTS,body),id=String(body._requestId||'');if(!/^[a-f0-9]{32}$/.test(id)||body.requestId!==id)throw new HttpError(400,'A matching local image request identity is required.');
-       const wantFlux3=scene&&!campaign&&body.engine==='flux3';if(wantFlux3&&!flux3InferenceAuthorized(env))throw new HttpError(503,'FLUX 3 is disabled. Configure the accepted weights and a compatible backend before enabling inference. No image was generated.');
+       const wantFlux3Cloud=scene&&!campaign&&body.engine==='flux3-cloud';
+       const wantFlux3=scene&&!campaign&&body.engine==='flux3';
+       if(wantFlux3Cloud){
+        const cloudReady=await comfyCloudFluxAvailability(env);if(!cloudReady.available)throw new HttpError(503,cloudReady.reason);
+        if(existsSync(checked.receipt))throw new HttpError(409,'This reviewed Comfy Cloud request was already submitted. Check saved results; no second billable job was created.');
+        const controller=new AbortController(),signal=AbortSignal.any([controller.signal,AbortSignal.timeout(900000)]);let jobId='';kleinJobs.set(id,{projectId:body.projectId,controller});
+        try{
+         try{await writeFile(checked.receipt,JSON.stringify({requestId:id,status:'claimed',created:Date.now(),projectId:body.projectId,engine:'flux3-cloud',idempotencyKey:id,endpoint:cloudReady.endpoint,automaticRetry:false}),{flag:'wx'});}catch{throw new HttpError(409,'This reviewed Comfy Cloud request was already submitted. Check history; no automatic retry.');}
+         const result=await serializeCloud(async()=>{
+          const progress=(stage:string,detail?:string,percent?:number)=>{
+           const phase=/upload|preparing product|submitting/i.test(stage)?'preparing':/download|checking|designing/i.test(stage)?'encoding':'generating';
+           activity.update(id,phase,detail?`${stage} · ${detail}`:stage,{percent:Number.isFinite(percent)?Math.round(percent!*100):null});
+          };
+          activity.update(id,'preparing','Preparing product references');
+          const r=await renderFlux3ComfyCloudScene(OUTPUTS,checked.prompt,checked.seed,body.image,body.identityImage,(checked as Awaited<ReturnType<typeof validateSceneRequest>>).archetype,signal,progress,env,{idempotencyKey:id});
+          jobId=r.jobId;activity.update(id,'encoding','Checking product identity');
+          try{const inspected={...r,...await inspectScenePixels(OUTPUTS,checked.plan,body.image,r.url),executionKind:'model-output' as const,transport:'comfy-cloud'};activity.update(id,'encoding','Designing advertisement');return inspected;}
+          catch(error){return {...r,inspectionError:String((error as Error).message),executionKind:'model-output' as const,transport:'comfy-cloud'};}
+         });
+         const bindDir=join(OUTPUTS,'hero-flux3-cloud',result.provenanceId);mkdirSync(bindDir,{recursive:true});
+         await writeFile(join(bindDir,'binding.json'),JSON.stringify({projectId:body.projectId,planId:body.planId,preparedId:body.preparedId,source:checked.plan.input.source,prompt:result.prompt,seed:result.seed,engine:'flux3-cloud',jobId:result.jobId,idempotencyKey:id}));
+         await writeFile(checked.receipt,JSON.stringify({requestId:id,status:'complete',engine:'flux3-cloud',jobId:result.jobId,idempotencyKey:id,result}));
+         return result;
+        }catch(e){jobId=(e as any).jobId||jobId;await writeFile(checked.receipt,JSON.stringify({requestId:id,status:'failed',engine:'flux3-cloud',error:String((e as Error).message),jobId,idempotencyKey:id,automaticRetry:false}));throw e;}
+        finally{kleinJobs.delete(id);}
+       }
+       if(wantFlux3&&!flux3InferenceAuthorized(env))throw new HttpError(503,'FLUX 3 is disabled. Configure the accepted weights and a compatible backend before enabling inference. No image was generated.');
        if(wantFlux3&&existsSync(checked.receipt))throw new HttpError(409,'This reviewed request was already submitted. Check saved results; no GPU was created.');
        let fluxSession:FluxSession|null=null;
        let workEnv:Env={...env};
@@ -984,7 +1021,8 @@ export function comfyApi(env: Env): Plugin {
    status:async()=>{try{const nodes=await comfyJson(env,'/object_info');const available=!!nodes.TextGenerate?.input?.optional?.system_prompt&&!!nodes.SaveText&&nodes.CLIPLoader?.input?.required?.clip_name?.[0]?.includes(promptModel);return {available,cpuSupported:false,id:promptModel,model:'Qwen3 4B · ComfyUI',reason:available?'Uses installed Qwen3 through ComfyUI. GPU/offload is managed by ComfyUI unless CPU is selected.':'Prompt polishing needs current ComfyUI TextGenerate/SaveText nodes and the Qwen3 4B text encoder from the image model pack.'}}catch{return {available:false,id:promptModel,model:'Qwen3 4B · ComfyUI',reason:'Connect ComfyUI to polish prompts. Advanced manual editing is available.'}}},
    generate:async(content,device)=>{if(queued>0)throw new PromptRewriteError(409,'ComfyUI is busy generating. Polish again when the current job finishes.');await ensureProxy(env);const c=client(env),wf=c.workflows.fromJson(await loadGraph('prompt_polish'));wf.setInput('1','device',device);wf.setInput('2','prompt',content);wf.setInput('2','system_prompt',promptInstruction);if(queued>0)throw new PromptRewriteError(409,'ComfyUI is busy generating. Polish again when the current job finishes.');const job=await serialize(()=>runWf(c,wf));const output=job.getOutputs('3')[0];if(!output)throw new PromptRewriteError(502,'ComfyUI returned no polished prompt. Your prompt is unchanged.');return Buffer.from(await output.toBytes()).toString('utf8')}
   });
-  const textReadiness=async(ownJob=false)=>{creativeTextRouting(env);const [nodes,queue,stats]=await Promise.all(['/object_info','/queue','/system_stats'].map(path=>comfyJson(env,path).catch(()=>null)));return creativeTextReadiness(nodes,queue,stats,(!ownJob&&queued>0)||trainingPending||setup.task.busy);};
+  const localBusy=(ownJob=false):string|false=>setup.task.busy?'Local runtime setup is in progress.':trainingPending?'Local adapter training is running.':ownJob||queued<1?false:textJobs>0?'Local Qwen is still finishing another text job (website brand analysis or a creative plan). Try again in a moment.':`Another local ComfyUI job is running (${queued} in the app queue). Try again when it finishes.`;
+  const textReadiness=async(ownJob=false)=>{creativeTextRouting(env);const [nodes,queue,stats]=await Promise.all(['/object_info','/queue','/system_stats'].map(path=>comfyJson(env,path).catch(()=>null)));return creativeTextReadiness(nodes,queue,stats,localBusy(ownJob));};
   const creativeBackend:CreativeBackend={
    status:async()=>{try{return await textReadiness();}catch(e){return {available:false,model:promptModel,reason:(e as Error).message};}},
    generate:async(system,content,options={})=>{
@@ -992,8 +1030,8 @@ export function comfyApi(env: Env): Plugin {
     const ready=await textReadiness();signal.throwIfAborted();if(!ready.available)throw new CreativeError(409,ready.reason);await ensureProxy(env);signal.throwIfAborted();
     const h=await fetch((env.COMFY_BASE_URL||'http://127.0.0.1:8189')+'/api/v2/health',{signal:AbortSignal.any([signal,AbortSignal.timeout(5000)])}),health=await h.json();
     if(!h.ok||String(health.upstream||'').replace(/\/$/,'')!==(env.COMFYUI_URL||'http://127.0.0.1:8188').replace(/\/$/,''))throw new CreativeError(503,'Text SDK proxy points to a different worker. Configure matching loopback URLs; no planning job submitted.');
-    if(queued>0||setup.task.busy)throw new CreativeError(409,'Local generation/setup is busy. No text job submitted.');const c=client(env);let jobId:string|undefined;
-    const text=await creativeSDKText(c,await loadGraph('prompt_polish'),system,content,wf=>serialize(async()=>{signal.throwIfAborted();const latest=await textReadiness(true);signal.throwIfAborted();if(!latest.available)throw new CreativeError(409,latest.reason);const job=await runWf(c,wf,undefined,false,creativeTextDeadlineMs,creativeTextExecution(c,signal,options.onSubmitted),true);jobId=job.id;await releaseKleinCache(job.id,env.COMFYUI_URL||'http://127.0.0.1:8188');return job;}),signal);
+    const busy=localBusy();if(busy)throw new CreativeError(409,busy+' No text job submitted.');const c=client(env);let jobId:string|undefined;
+    const textGraph=await loadGraph('prompt_polish');textJobs++;const text=await creativeSDKText(c,textGraph,system,content,wf=>serialize(async()=>{signal.throwIfAborted();const latest=await textReadiness(true);signal.throwIfAborted();if(!latest.available)throw new CreativeError(409,latest.reason);const job=await runWf(c,wf,undefined,false,creativeTextDeadlineMs,creativeTextExecution(c,signal,options.onSubmitted),true);jobId=job.id;await releaseKleinCache(job.id,env.COMFYUI_URL||'http://127.0.0.1:8188');return job;}),signal).finally(()=>{textJobs--;});
     signal.throwIfAborted();if(!jobId)throw new CreativeError(502,'Text SDK did not return a job identity.');const native=await fetch((env.COMFYUI_URL||'http://127.0.0.1:8188')+'/history/'+encodeURIComponent(jobId),{signal:AbortSignal.any([signal,AbortSignal.timeout(5000)])});if(!native.ok)throw new CreativeError(502,'Cannot verify the executed planning job.');const execution=verifyPlanningExecution(await native.json(),jobId,promptModel,system,content);options.onExecution?.(execution);return text;
    }
   };

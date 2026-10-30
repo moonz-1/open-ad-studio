@@ -47,9 +47,10 @@ export function auditCreativeBrief(b:CreativeBriefV2):BriefIssue[]{
 }
 export function photoOnlyDirection(text:string,plan:CreativePlan){
  const c=plan.concepts.find(c=>c.id===plan.selectedId),observed=[plan.input.facts.description,plan.input.facts.texture,plan.input.facts.container].join(' ').toLowerCase();
+ // Strip consumer/marketing phrases entirely — do not replace with “graphic copy” (that invites FLUX lettering).
  const words=[plan.composition.headline,plan.composition.body,plan.composition.cta,c?.title].filter((v):v is string=>!!v&&v.trim().length>3&&!observed.includes(v.toLowerCase()));
- for(const phrase of words){let start=0,lower=text.toLowerCase(),needle=phrase.toLowerCase(),index=lower.indexOf(needle,start);while(index>=0){text=text.slice(0,index)+'separate graphic copy'+text.slice(index+phrase.length);start=index+'separate graphic copy'.length;lower=text.toLowerCase();index=lower.indexOf(needle,start);}}
- return text;
+ for(const phrase of words){let start=0,lower=text.toLowerCase(),needle=phrase.toLowerCase(),index=lower.indexOf(needle,start);while(index>=0){text=text.slice(0,index)+text.slice(index+phrase.length);start=index;lower=text.toLowerCase();index=lower.indexOf(needle,start);}}
+ return text.replace(/\s{2,}/g,' ').replace(/\s+\b(?:for|of|to|with|about|reading)\s*(?=[.;,:]|$)/gi,'').trim();
 }
 export function compileCreativeBrief(plan:CreativePlan):CreativeBriefV2{
  const c=plan.concepts.find(c=>c.id===plan.selectedId);if(!c)throw Error('Select an existing creative direction.');const i=plan.input,d=structuredClone(plan.dynamics||buildCompositionPlan(plan));
@@ -57,7 +58,7 @@ export function compileCreativeBrief(plan:CreativePlan):CreativeBriefV2{
  if(plan.context.controls.angle==='none'&&!/match.*source|reference viewpoint|source viewpoint/i.test(d.camera.viewpoint)){d.camera.viewpoint='Match the supplied reference viewpoint; no alternate view.';repairs.push('Reinstated the owner source-viewpoint lock.');}
  const safe=(text:string)=>photoOnlyDirection(text,plan);
  const sourceFacts=[['Product description',i.facts.description],['Observed surface',i.facts.texture],['Observed packaging',i.facts.container],['Observed arrangement',i.facts.arrangement]].filter(([,s])=>s).map(([k,v])=>`${k}: ${v}`);
- const restrictions=['Do not invent ingredients, claims, variants, branding or product specifications.','Unseen faces/interiors are unknown; use only reference-supported surfaces.','No new scene headlines, CTAs, watermarks or branding. Preserve existing product labels and artwork only from the reference; consumer copy is typeset separately.',...d.brand.constraints];
+ const restrictions=['Do not invent ingredients, claims, variants, branding or product specifications.','Unseen faces/interiors are unknown; use only reference-supported surfaces.','Unlettered photograph: the only permitted writing is genuine product packaging printed on the identity reference. No posters, signs, slogans, captions, watermarks, random symbols or text-like patterns anywhere else.',...d.brand.constraints];
  const sceneCaption=[
  'Create one continuous reference-conditioned advertising photograph. Use the reviewed product reference for physical identity. This is generative restaging; output identity is unverified and must be compared with the original.',
  ...sourceFacts,`Target product count: ${d.product.count}. Source observed count: ${i.facts.count??'unknown'}. Follow the reviewed target; no accidental extra units.`,
@@ -69,7 +70,7 @@ export function compileCreativeBrief(plan:CreativePlan):CreativeBriefV2{
  `Environment: ${safe(c.environment)}`,
  `Lighting: ${safe(d.light.key)} Atmosphere: ${safe(d.light.atmosphere)}`,
  `Palette: ${i.brand.colors.length?'Brand surroundings may echo '+i.brand.colors.join(', ')+'; preserve real product colours.':'No confirmed brand palette; use neutral surroundings and preserve real product colours.'}`,
- `Text-safe region: ${safe(d.typography.safeRegion)} ${safe(d.frame.negativeSpace)}`,
+ `Open field (unlettered materials only): ${safe(d.typography.safeRegion)} ${safe(d.frame.negativeSpace)}`,
  'Product observations are owner/source descriptions, not a claim that the text model inspected pixels.',...restrictions,
  ].join('\n');
  const b:CreativeBriefV2={schema:'creative-brief-v2',projectId:i.projectId,planId:plan.id,productId:i.productId,source:structuredClone(i.source),inputBinding:briefInputBinding(i),evidence,product,identityAnchors:[...d.product.identityAnchors],unknownCharacteristics:product.unknowns,marketing:{conceptId:c.id,title:c.title,insight:c.idea,objective:c.strategy?.objective||i.request||'Proposed product consideration; owner review required.',appeal:c.strategy?.feeling||i.brand.dna.tone,businessFit:c.strategy?.businessFit||evidence.find(f=>f.id==='brand-description')?.text||i.brand.dna.name,visualHook:c.strategy?.memory||c.composition,productEmphasis:c.strategy?.focus||i.facts.description,copyDirection:'Separate consumer copy below; never use this visual hook as ad text.',interpretation:'hypothesis',evidenceIds:[...c.evidenceIds]},permissions:structuredClone(plan.context.controls),approvedClaims:claims,composition:d,sceneCaption,restrictions,consumerCopy:{headline:plan.composition.headline,body:plan.composition.body,cta:plan.composition.cta},planning:structuredClone(plan.provider),execution:{image:'not-run',planningResponseValidated:plan.provider.mode==='local-ai'&&plan.provider.execution?.status==='validated'&&!/^authored(?:-|$)/i.test(plan.provider.model||''),liveInferenceVerified:plan.provider.execution?.inference==='fresh'&&plan.provider.execution?.transport==='comfy-sdk'&&plan.provider.execution.status==='validated'&&!!plan.provider.execution.jobId},critic:{issues:[],repairs,visualQualityVerified:false}};

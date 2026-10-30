@@ -1,4 +1,4 @@
-import {campaignExecutionStrategy} from '../lib/campaign-presentation.ts';
+import {fluxRestageBlock} from '../lib/campaign-presentation.ts';
 import {buildProductIdentityProfile} from '../lib/product-identity-profile.ts';
 // Native reference-conditioned scene editing. Reuses existing verified weights,
 // SDK/proxy execution, review checks, receipts and exact-job cancellation.
@@ -24,14 +24,16 @@ export async function sceneAvailability(outputs:string,modelsDir:string|undefine
 export async function validateSceneRequest(outputs:string,body:any){
  const checked=await validateBackgroundRequest(outputs,body);
  if(body.identityImage&&body.identityImage!==body.image)throw new HeroError(400,'Journey identity reference must be the current reviewed source. A separately reviewed identity picker is not connected.');
- const engine=body.engine==='flux3'?'flux3':'klein';
- if(engine==='flux3'&&campaignExecutionStrategy(checked.plan)!=='creative-restage')throw new HeroError(409,'Reviewed geometry locks require a product-locked engine. Choose Creative Restage and review a fresh plan before FLUX 3; no inference was submitted.');
- const requestedPrompt=engine==='flux3'?flux3ScenePrompt(checked.plan):adScenePrompt(checked.plan);
+ const engine=body.engine==='flux3-cloud'?'flux3-cloud':body.engine==='flux3'?'flux3':'klein';
+ const fluxFamily=engine==='flux3'||engine==='flux3-cloud';
+ const fluxBlock=fluxFamily?fluxRestageBlock(checked.plan):'';
+ if(fluxBlock)throw new HeroError(409,fluxBlock+' No inference was submitted.');
+ const requestedPrompt=fluxFamily?flux3ScenePrompt(checked.plan):adScenePrompt(checked.plan);
  if(body.promptSha256!==heroSha(requestedPrompt))throw new HeroError(409,'The scene prompt changed. Review the current direction before generating.');
  // Bind measured geometry only after the reviewed client caption and source bytes pass admission.
- const source=engine==='flux3'?await heroSource(outputs,body.image):undefined;
+ const source=fluxFamily?await heroSource(outputs,body.image):undefined;
  const identityProfile=source?buildProductIdentityProfile(source.bytes,{kind:'packshot',sha256:source.sha256,categoryHint:checked.plan.input.productType,foodIrregular:['cookies','cinnamon-rolls','bakery'].includes(checked.plan.input.productType)}):undefined;
- const prompt=engine==='flux3'?flux3ScenePrompt(checked.plan,identityProfile):requestedPrompt;
+ const prompt=fluxFamily?flux3ScenePrompt(checked.plan,identityProfile):requestedPrompt;
  if(prompt.length>8000)throw new HeroError(422,'The photographic brief exceeds the saved-scene limit. Shorten source notes and review again; no inference was submitted.');
  return {...checked,prompt,requestedPromptSha256:heroSha(requestedPrompt),identityProfile,engine,archetype:sceneDirection(checked.plan).archetype};
 }

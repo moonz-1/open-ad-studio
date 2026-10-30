@@ -8,7 +8,7 @@ const dynamics={
  concept:{title:'Leave Nothing Behind',idea:'One unfinished cookie.',audienceResponse:'Warm resolve.',memory:'One cookie against calm studio depth.'},
  product:{subjects:'One thick irregular chocolate chip cookie.',identityAnchors:['irregular roundish / lumpy planform — not a loaf, baguette, or elongated bread roll','deep irregular cracked crust (handmade topography)','uneven embedded chocolate chunks — not oversized flat melting disks'],count:1,arrangement:'Single hero; compact roundish planform; no multi-cookie inventing.',packagingPolicy:'omit-if-not-product'},
  frame:{heroPlacement:'Compact hero slightly below centre with open upper field.',depth:'Near product.',negativeSpace:'Expand calm negative space.',hierarchy:'Product first.',energy:'restrained'},
- camera:{viewpoint:'Three-quarter tabletop.',distance:'Closer.',framing:'Open field for lettering.',lensFeel:'Shallow depth.'},
+ camera:{viewpoint:'Three-quarter tabletop.',distance:'Closer.',framing:'Empty open field.',lensFeel:'Shallow depth.'},
  light:{key:'Single warm studio key.',atmosphere:'Sculptural dark food mood.'},
  brand:{tone:'Warm, inviting and indulgent.',flexibility:'Creative reconstruction.',constraints:['Do not invent ingredients.']},
  supports:{allowed:true,note:'Minimal supports.'},

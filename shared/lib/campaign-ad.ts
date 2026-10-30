@@ -146,6 +146,10 @@ function renderGraphicOverlay(
  if(plan.showBrand&&d.brandName.trim()){
   renderTypedText(parts,textBounds,warnings,d.brandName,plan.placement.brand,plan.typography.brand.size,plan.brandColor,plan.typography.brand.weight,plan.typography.brand.tracking,plan.typography.brand.family,plan.typography.brand.lineHeight,plan.typography.brand.transform,plan.typography.brand.align);
  }
+ const line=plan.typography.productLine,lineBox=plan.placement.productLine;
+ if(line&&lineBox&&d.productLine?.trim()){
+  renderTypedText(parts,textBounds,warnings,d.productLine,lineBox,line.size,plan.textColor,line.weight,line.tracking,line.family,line.lineHeight,line.transform,line.align);
+ }
  if(d.headline.trim()){
   renderTypedText(parts,textBounds,warnings,d.headline,plan.placement.headline,plan.typography.headline.size,plan.textColor,plan.typography.headline.weight,plan.typography.headline.tracking,plan.typography.headline.family,plan.typography.headline.lineHeight,plan.typography.headline.transform,plan.typography.headline.align);
  }
@@ -251,7 +255,9 @@ export function campaignSVG(dIn:StaticDesign,images:StaticImages,w:number,h:numb
  const photoBox={x:0,y:0,width:w,height:h};
  // Transparent source pixels inherit the approved canvas colour, keeping final PNGs opaque.
  rect(0,0,w,h,d.background);
- image(images.photo,0,0,w,h,'xMidYMid slice');
+ const crop=layoutHints?.crop;
+ if(crop)image(images.photo,crop.x,crop.y,crop.width,crop.height,'none');
+ else image(images.photo,0,0,w,h,'xMidYMid slice');
  const hints=layoutHints||layoutHintsFromGeometry(d.campaign?.graphic?.geometry);
  graphicPlan=planGraphicArt(d,w,h,hints);
  // Prefer luma of the chosen headline zone when available.
@@ -270,7 +276,8 @@ export function campaignSVG(dIn:StaticDesign,images:StaticImages,w:number,h:numb
  renderGraphicOverlay(d,graphicPlan,w,h,parts,textBounds,warnings);
 
  if(contrast(d.background,d.textColor)<4.5)warnings.push('Text/background contrast is below 4.5:1.');
- const quality=evaluateAdQuality(d,{photoBox,canvas:{width:w,height:h}});
+ const pb=hints.productBox,productBox=pb?{x:pb.x*w,y:pb.y*h,width:pb.width*w,height:pb.height*h}:undefined;
+ const quality=evaluateAdQuality(d,{photoBox,...(productBox?{productBox}:{}),canvas:{width:w,height:h}});
  for(const issue of quality.issues)if(!warnings.includes(issue))warnings.push(issue);
  // Quality grade stays in returned metadata for the UI — never drawn into the advertising asset.
 

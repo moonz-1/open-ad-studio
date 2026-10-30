@@ -10,19 +10,19 @@ import {comfyApi} from '../../shared/runtime/api.ts';
 import {catalogFixture} from './catalog-fixtures.mjs';
 import {textNodesFixture} from './creative-fixtures.mjs';
 const gib=1024**3,nodes=textNodesFixture(),queue={queue_running:[],queue_pending:[]},stats={system:{ram_free:8*gib},devices:[{type:'cuda',vram_free:8*gib,torch_vram_total:gib,torch_vram_free:gib/2}]};
-assert.equal(creativeTextDeadlineMs,90000);
-assert.equal(textDeadlineError(Error('job example not terminal after 90000ms (status=running)')),true);
+assert.equal(creativeTextDeadlineMs,150000);
+assert.equal(textDeadlineError(Error('job example not terminal after 150000ms (status=running)')),true);
 assert.equal(textDeadlineError(Error('Invalid brand-analysis line.')),false);
 let waits=0,results=0;const short=AbortSignal.timeout(15),keepAlive=setTimeout(()=>{},100);
-try{await assert.rejects(()=>waitCreativeTextJob({wait:async(ms,signal)=>{waits++;assert.equal(ms,90000);assert.equal(signal,short);await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}));},result:async()=>{results++;}},short),/timeout/i);}finally{clearTimeout(keepAlive);}
+try{await assert.rejects(()=>waitCreativeTextJob({wait:async(ms,signal)=>{waits++;assert.equal(ms,150000);assert.equal(signal,short);await new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}));},result:async()=>{results++;}},short),/timeout/i);}finally{clearTimeout(keepAlive);}
 assert.equal(waits,1);assert.equal(results,0,'An aborted polling call cannot start result polling or another submission');
 const signal=new AbortController().signal;await waitCreativeTextJob({wait:async(ms,s)=>{assert.equal(s,signal);waits++;},result:async s=>{assert.equal(s,signal);results++;}},signal);assert.equal(waits,2);assert.equal(results,1);
 // Execute the actual shared runner with the narrow text hooks, SDK doubles and
-// a short injected test signal. Production always supplies the 180-second one.
+// a short injected test signal. Production always supplies the 150-second one.
 const apiSource=await readFile('shared/runtime/api.ts','utf8'),runSource=apiSource.slice(apiSource.indexOf('async function runWf('),apiSource.indexOf('// One job at a time'));
 const runWorkflow=Function('ctx','with(ctx){'+stripTypeScriptTypes(runSource,{mode:'transform'})+';return runWf}')({activity:{update(){},note(){}},diagnostics:{},clientUrls:new WeakMap(),phaseForProgress:()=>'',loadingLog:()=>null,nodeProgressMessage:()=>null});
 let submits=0,cancels=0,diagnosed=0;const sdk={submit:async()=>{submits++;return {id:'exact-synthetic-text',events:async function*(){},wait:async(ms,s)=>new Promise((_,reject)=>s.addEventListener('abort',()=>reject(s.reason),{once:true})),result:async()=>assert.fail('No result after deadline'),cancel:async()=>{cancels++;}};}};
-const retained=setTimeout(()=>{},100);try{await assert.rejects(()=>runWorkflow(sdk,{json:{}},undefined,false,90000,{wait:j=>waitCreativeTextJob(j,AbortSignal.timeout(15)),failed:async(j,error,_started,cancellation)=>{diagnosed++;assert.equal(j.id,'exact-synthetic-text');assert.match(cancellation,/not proof of termination/);return error;}}),/timeout/i);}finally{clearTimeout(retained);}
+const retained=setTimeout(()=>{},100);try{await assert.rejects(()=>runWorkflow(sdk,{json:{}},undefined,false,150000,{wait:j=>waitCreativeTextJob(j,AbortSignal.timeout(15)),failed:async(j,error,_started,cancellation)=>{diagnosed++;assert.equal(j.id,'exact-synthetic-text');assert.match(cancellation,/not proof of termination/);return error;}}),/timeout/i);}finally{clearTimeout(retained);}
 assert.equal(submits,1);assert.equal(cancels,1);assert.equal(diagnosed,1);
 assert.equal(creativeTextReadiness(nodes,queue,stats).available,true);
 assert.equal(creativeTextReadiness(nodes,queue,stats,true).available,false);
@@ -40,7 +40,7 @@ const f=catalogFixture(),site=f.base+'/collections/perfumes';let clock=1000,call
 const answer=['tone | source-1 | Suggest a calm and welcoming voice for the supplied fragrance catalog.','visualStyle | source-1 | Propose restrained surroundings and clear material edges around the unchanged reference product.','audience | source-1 | Hypothesis: fragrance shoppers may appreciate readable descriptions of the listed products.','guidelines | source-1 | Keep product names accurate and avoid unsupported claims in the advertisement.'].join('\n');
 const backend={status:async()=>({available:true,model:'MOCK Qwen3',reason:'Synthetic CPU test'}),generate:async()=>{calls++;if(calls===1)throw Error('Timed out waiting for job; text job synthetic-id, native running, cancellation requested. No retry.');return answer;}};
 const service=createBrandService({},backend,f.read,()=>clock),input={website:site,deferAnalysis:true};
-const first=await service.discover(input),failed=await service.analyze({key:first.analysisKey});assert.equal(failed.analysisState,'failed');assert.match(failed.warnings.join(' '),/180-second deadline.*synthetic-id/);
+const first=await service.discover(input),failed=await service.analyze({key:first.analysisKey});assert.equal(failed.analysisState,'failed');assert.match(failed.warnings.join(' '),/150-second deadline.*synthetic-id/);
 assert.deepEqual(await service.analyze({key:first.analysisKey}),failed);assert.equal(calls,1);
 const immediate=await service.discover(input);assert.equal(immediate.analysisState,'failed');await service.analyze({key:immediate.analysisKey});assert.equal(calls,1,'Failure cooldown prevents repeated rediscovery attempts');
 clock+=60001;const fresh=await service.discover(input);assert.equal(fresh.analysisState,'pending');const pair=await Promise.all([service.analyze({key:fresh.analysisKey}),service.analyze({key:fresh.analysisKey})]);assert.equal(calls,2);assert.equal(pair[0].aiCompleted,true);assert.deepEqual(pair[0],pair[1]);
@@ -59,5 +59,5 @@ try{
  let s=await(await fetch(api+'/api/brand/status')).json();assert.equal(s.available,false);assert.match(s.reason,/busy/);
  nativeQueue=queue;nativeStats=pressure;s=await(await fetch(api+'/api/creative/status')).json();assert.equal(s.available,false);assert.match(s.reason,/memory pressure/);
  nativeStats=stats;s=await(await fetch(api+'/api/brand/status')).json();assert.equal(s.available,true);assert.equal(s.provider,'comfy-qwen3');assert.equal(submissions,0);
- console.log('PASS Qwen text admission (native queue/memory/offline), unchanged 180s bound, one attempt/receipt, short failure cooldown and explicit rediscovery recovery, in-flight dedup, fail-fast competing evidence, raw invalid output quarantine, real Vite status. MOCK CPU only.');
+ console.log('PASS Qwen text admission (native queue/memory/offline), 150s execution bound, one attempt/receipt, short failure cooldown and explicit rediscovery recovery, in-flight dedup, fail-fast competing evidence, raw invalid output quarantine, real Vite status. MOCK CPU only.');
 }finally{await vite?.close();await new Promise(ok=>native.close(ok));}

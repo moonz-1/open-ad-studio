@@ -1,4 +1,4 @@
-﻿# Connect AI
+# Connect AI
 
 You can explore the app and make Product-safe PNGs before connecting any AI. No backend is purchased, started or downloaded by the launcher.
 
@@ -18,11 +18,11 @@ Klein 4B FP8 and FLUX.3 BF16 have different requirements. The coded FLUX.3 admis
 
 ## Comfy Cloud
 
-**Release status:** the committed Cloud RC is audited separately; its adapter has not been merged into this staging runtime. These instructions prepare final integration, not a claim of fresh live acceptance. Final integration must preserve the safe defaults below and replace stale developer-specific Cloud documentation.
+**Release status:** the committed native Cloud adapter is integrated as experimental, with fresh-install spending disabled. CPU contracts and unavailable-model recovery are tested. This release audit does not certify a new paid Journey Generate result. Earlier direct Cloud outputs do not establish full customer-click acceptance.
 
 Comfy's [SDK quickstart](https://docs.comfy.org/development/deploy/cloud) requires a paid subscription and API key. [Standard supports one concurrent workflow](https://docs.comfy.org/development/deploy/cloud-usage); Creator supports more concurrency/custom model import. Start by checking managed FLUX.3 Distilled Edit model availability in your account. Do not upgrade or subscribe merely because a source file names a model. Consult [current pricing](https://comfy.org/pricing) yourself; this app does not purchase a plan.
 
-Shortest safe setup after the Cloud adapter is integrated:
+Shortest safe setup:
 
 1. Create an API key at https://platform.comfy.org/profile/api-keys.
 2. Copy `.env.example` to `.env` **in this application's folder**. Add these server-only values in a local text editor:

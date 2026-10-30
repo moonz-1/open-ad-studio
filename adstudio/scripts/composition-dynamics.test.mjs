@@ -52,7 +52,7 @@ test('refinement updates concrete dynamics fields rather than vague prose only',
  assert.ok(Object.keys(parseCompositionRefinement('Arrange the products diagonally and leave more negative space for copy.')).length>=2);
  const refined=refinePlanComposition(plan,'Arrange the products diagonally. Leave more negative space for copy.',('f'.repeat(16)));
  assert.match(refined.dynamics.product.arrangement,/diagonal/i);
- assert.match(refined.dynamics.frame.negativeSpace,/typography|lettering|negative space/i);
+ assert.match(refined.dynamics.frame.negativeSpace,/open field|unlettered|negative space/i);
  assert.equal(refined.dynamics.frame.energy,'dynamic');
  const prompt=compositionPlanPrompt(refined.dynamics);
  assert.match(prompt,/diagonal/i);

@@ -37,13 +37,13 @@ Prefer Git? Clone this repository and run the same launcher. [Troubleshooting an
 
 **Local ComfyUI.** Connect an existing installation and install only the models you choose. Qwen plans creative directions; Klein or FLUX generates photography when your backend supports it. [Local connection guide](docs/CONNECT_AI.md#local-comfyui).
 
-**Comfy Cloud, optional.** API access requires an eligible paid subscription, an API key and compatible models. Generations consume credits. The incoming Cloud adapter is awaiting final integrated acceptance; it is not included in this staging application's runtime yet. [Secure setup and release status](docs/CONNECT_AI.md#comfy-cloud).
+**Comfy Cloud, optional.** API access requires an eligible paid subscription, an API key and compatible models. Generations consume credits. The native Cloud adapter is included as experimental, with spending off by default. Full paid Journey acceptance is not certified by this release audit. [Secure setup and release status](docs/CONNECT_AI.md#comfy-cloud).
 
 ### How it works
 
 **Website → Product evidence → Creative direction → Generate → Compare → Edit → Export**
 
-ComfyUI runs the photography workflow. Graphic Art Director adds digital typography afterwards, keeping your approved words editable. Product identity and framing checks help reveal mismatches; you still review the result before publication.
+The Comfy SDK runs the included [native ComfyUI workflows](shared/workflows/CONTRACT.md) through a local SDK proxy or the optional Cloud transport. Graphic Art Director adds digital typography afterwards, keeping your approved words editable. Product identity and framing checks help reveal mismatches; you still review the result before publication.
 
 ### Built with
 
@@ -51,7 +51,7 @@ React · TypeScript · Vite · ComfyUI · Comfy SDK · Qwen · FLUX/Klein · Res
 
 ### Requirements & limitations
 
-Node.js 22.18+ and npm are required. Git is optional for ZIP downloads. Local AI needs separately installed ComfyUI, models and suitable GPU memory; FLUX.3 BF16 does not fit the tested 10 GB GPU admission requirement. Cloud is paid and opt-in. Website discovery cannot bypass protected sites. Photograph motion is CPU animation; generative LTX video remains experimental. [Models and licenses](docs/MODELS_AND_LICENSES.md).
+Node.js 22.18+ and npm are required. Git is optional for ZIP downloads. Local AI needs separately installed ComfyUI, models and suitable GPU memory; FLUX.3 BF16 does not fit the tested 10 GB GPU admission requirement. Cloud is paid, experimental and opt-in; public clones start with spending disabled. Website discovery cannot bypass protected sites. Photograph motion is CPU animation; generative LTX video remains experimental. [Models and licenses](docs/MODELS_AND_LICENSES.md).
 
 ### License
 

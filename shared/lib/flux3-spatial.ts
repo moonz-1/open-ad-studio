@@ -70,14 +70,15 @@ export function defaultHeroCopyBoxes(
   };
  }
  if(silhouette==='compact-irregular'){
+  // Food / pastry heroes: inset with ≥12% margins so trays are not edge-cropped.
   if(energy==='dynamic')return{
-   hero:box(400,240,880,760),
-   copy:box(40,520,340,960),
+   hero:box(360,200,820,700),
+   copy:box(40,560,320,960),
    background:box(0,0,1000,1000),
   };
   return{
-   hero:box(420,280,860,740),
-   copy:box(40,80,360,920),
+   hero:box(340,180,800,680),
+   copy:box(40,80,300,920),
    background:box(0,0,1000,1000),
   };
  }
@@ -124,8 +125,8 @@ function morphologyConstraints(dynamics:CompositionPlan):string[]{
 
 function typographyConstraint(dynamics:CompositionPlan):string{
  if(isBottleSubject(dynamics)||dynamics.product.packagingPolicy==='preserve')
-  return 'No new scene typography, headlines, watermarks or CTAs. Preserve only the product’s existing printed label and embossing from the reference.';
- return 'CRITICAL: zero letters, words, logos, watermarks, numbers, or typography anywhere in the photograph.';
+  return 'UNLETTERED SCENE: the only permitted writing is the product’s existing printed label and embossing copied from the identity reference. No posters, signs, captions, slogans, watermarks, random symbols, or text-like patterns anywhere else in the photograph.';
+ return 'UNLETTERED SCENE: zero letters, words, logos, watermarks, numbers, symbols, posters, signs, or text-like patterns anywhere in the photograph — blank materials only outside the product itself.';
 }
 
 /** Build Comfy-native spatial guidance from a CompositionPlan (+ optional measured identity). */
@@ -196,18 +197,18 @@ export function dynamicsToFlux3Spatial(dynamics:CompositionPlan,options:{
   `Light: ${dynamics.light.key}`,
   'The reviewed product arrangement at intentional prominence; preserve identity anchors and real proportions; no invented extras.',
  ].join(' ');
- const copyDesc='Empty calm negative space for later headline lettering. No competing products or props that steal focus.';
- const bgDesc=`${environment} Atmosphere: ${dynamics.light.atmosphere} Brand tone: ${dynamics.brand.tone}. Continuous photographic depth behind the hero — real materials and light falloff, not flat colour fields; no competing subjects.`;
+ const openFieldDesc='Empty calm open field of unlettered materials — no writing, symbols, posters or signs. No competing products or props that steal focus.';
+ const bgDesc=`${environment} Atmosphere: ${dynamics.light.atmosphere} Brand tone: ${dynamics.brand.tone}. Continuous photographic depth behind the hero — real materials and light falloff, not flat colour fields; no competing subjects; no signage.`;
 
  const elements:Flux3LayoutElement[]=[
   {id:'background_1',bbox:boxes.background,desc:bgDesc.slice(0,420)},
   {id:'product_1',bbox:boxes.hero,desc:heroDesc.slice(0,420)},
-  {id:'copy_space_1',bbox:boxes.copy,desc:copyDesc},
+  {id:'open_field_1',bbox:boxes.copy,desc:openFieldDesc},
  ];
 
- // Short request for official prompt upsampler — constraints must survive expansion; no slogan lines.
+ // Short request for official prompt upsampler — constraints must survive expansion; never invite slogans.
  const shortPrompt=[
-  'Commercial product photograph only. Empty negative space for later lettering.',
+  'Commercial product photograph only. Blank unlettered open field beside the product.',
   `Frame: ${dynamics.frame.heroPlacement}. Energy: ${dynamics.frame.energy}.`,
   `Product: ${dynamics.product.subjects}`,
   constraints.join(' '),
@@ -217,25 +218,25 @@ export function dynamicsToFlux3Spatial(dynamics:CompositionPlan,options:{
  const prose=[
   `Integrated commercial photograph.`,
   `Hero product <product_1> (${dynamics.product.subjects.slice(0,160)}) as the primary subject with a legible contact shadow.`,
-  `Open field <copy_space_1> stays empty for later brand lettering — no new text rendered in-camera.`,
-  `Environment <background_1> supports the brand without inventing extra product units.`,
-  `Reference images supply product identity for shape, material, label and surface — restage into a new coherent scene; do not collage or paste.`,
+  `Open field <open_field_1> stays blank — unlettered materials only; no writing rendered in-camera.`,
+  `Environment <background_1> supports the brand without inventing extra product units or signs.`,
+  `Reference images supply product identity for shape, material, packaging labels and surface — restage into a new coherent scene; do not collage or paste.`,
  ].join(' ');
 
  const captionWithBoxes=`${prose} ${JSON.stringify(elements)}`;
 
  // Dense validated caption used when TextGenerate (pup) is unavailable — equivalent expansion, not a shallow stub.
  const directorPrompt=[
-  'Brand-directed commercial still photograph of the reviewed product arrangement. No new scene typography.',
+  'Brand-directed commercial still photograph of the reviewed product arrangement. Unlettered scene except genuine product packaging from the reference.',
   `Product identity: ${dynamics.product.subjects}. Anchors: ${anchors}.`,
   `Arrangement: ${dynamics.product.arrangement}`,
-  `Setting materials only (no signage): ${environment}`,
+  `Setting materials only (no signage, no posters, no writing): ${environment}`,
   `Camera: ${dynamics.camera.viewpoint} ${dynamics.camera.distance} ${dynamics.camera.framing} ${dynamics.camera.lensFeel}`,
   `Light: ${dynamics.light.key}. Atmosphere: ${dynamics.light.atmosphere}. Brand tone: ${dynamics.brand.tone}.`,
   `Frame energy ${dynamics.frame.energy}; hero ${dynamics.frame.heroPlacement}; negative space ${dynamics.frame.negativeSpace}.`,
   constraints.join(' '),
-  `Spatial layout (0–1000 placement guides): product_1=${JSON.stringify(boxes.hero)}, copy_space_1=${JSON.stringify(boxes.copy)}.`,
-  'One continuous photograph with believable soft contact shadow and material-accurate reflections. No cutout paste, no flat-colour void backgrounds, no hard synthetic shelf/ledge graphics, no unrequested extra units, no invented packaging theatre.',
+  `Spatial layout (0–1000 placement guides): product_1=${JSON.stringify(boxes.hero)}, open_field_1=${JSON.stringify(boxes.copy)}.`,
+  'One continuous photograph with believable soft contact shadow and material-accurate reflections. No cutout paste, no flat-colour void backgrounds, no hard synthetic shelf/ledge graphics, no unrequested extra units, no invented packaging theatre, no background writing.',
   options.seedHint||'',
  ].filter(Boolean).join('\n');
 

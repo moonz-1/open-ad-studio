@@ -46,6 +46,20 @@ export function campaignExecutionStrategy(plan:CreativePlan):CampaignExecution{
 }
 
 /**
+ * FLUX 3 (local or Comfy Cloud) always re-photographs from the reference: lighting, setting, camera and
+ * background follow the direction, while shape, proportions, labels and packaging are bound by the reference
+ * image and the measured identity profile in `flux3ScenePrompt`, then checked after delivery. Fidelity and
+ * count locks therefore stay in force as identity requirements rather than routing the plan away from FLUX.
+ * Returns why a plan cannot be rendered this way, or '' when it can.
+ */
+export function fluxRestageBlock(plan:Pick<CreativePlan,'input'|'context'>):string{
+ if(plan.input.productType==='digital'||plan.input.productType==='service')return 'FLUX 3 re-photographs a physical product, and this direction is for a digital or service offer. Choose Product-safe design.';
+ if(plan.context.controls.fidelity==='strict')return 'This direction asks for strict photo fidelity (same camera, framing and setting), which a FLUX 3 re-photograph cannot keep. Choose Product-locked Klein or Product-safe design.';
+ return '';
+}
+export const isFluxEngine=(engine:string|undefined)=>engine==='flux3'||engine==='flux3-cloud';
+
+/**
  * Deterministic SVG plates are a last resort when Klein empty-set generation is unavailable —
  * never the default for high fidelity / exact count (that caused the poster regression).
  */

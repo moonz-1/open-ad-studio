@@ -1,5 +1,7 @@
 # Submission staging and final integration
 
+Current integration/publication authority and capability assessment: [STATUS.md](STATUS.md). Older pending-integration / approval statements below describe their original checkpoints.
+
 Current follow-up: [release hardening, launcher acceptance and resolved image attribution](HARDENING.md) supersedes the historical rights/credential-utility and Git-only installation findings below.
 
 This is an independent release-engineering branch. It does not replace the stable application or certify unfinished Cloud work.

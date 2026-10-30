@@ -2,7 +2,7 @@
 
 ## 110-second recording sequence
 
-Record the final verified release, using an owner-authorized product photograph and website. This plan describes the intended Cloud demonstration, **not evidence that Cloud currently works**. Begin recording only after Cursor supplies a successful exact-revision Journey handoff. Do not display private fragrance references, API keys, account billing, developer outputs or internal quality fixtures.
+Record the final verified release, using an owner-authorized product photograph and website. Recommended first product: your own No Crumbs tiramisu-roll photograph. Enter `https://nocrumbsbakery.store/` for brand context, then upload that photograph manually: this variant is not a confirmed catalog listing. Never claim the upload was discovered in the catalog. This plan describes the intended Cloud demonstration, **not evidence that Cloud currently works**. Use the actual accepted release and record paid generation only after you separately authorize it. The source release can include experimental Cloud support without claiming successful paid Journey acceptance. Do not display private fragrance references, API keys, account billing, developer outputs or internal quality fixtures.
 
 Opening: **"A good ad should begin with what makes your product real."**
 
@@ -54,7 +54,7 @@ The owner must personally accept all four attestations: public licensed repo, la
 
 ## Owner actions remaining
 
-1. Receive Cursor's verified final Cloud commit, actual job/reference/weight evidence and reload/export acceptance. Authorize any paid inference separately.
+1. For the intended Cloud recording, verify actual job/reference/weight evidence and reload/export acceptance. Authorize any paid inference separately; it was not performed by this release audit.
 2. Use rights-cleared demo media. The historical Field Study copyright concern is resolved by its documented Unsplash attribution; see the hardening follow-up.
-3. Approve publication of the reviewed final staging diff. No push has occurred from this release-engineering branch.
+3. Verify the final public repository and release status after Codex completes its explicitly authorized safe publication. No additional owner approval is required for that scoped push.
 4. Record/host the truthful sub-two-minute demo, publish the hashtagged social post, then complete owner details/attestations and submit.

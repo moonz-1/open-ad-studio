@@ -4,7 +4,7 @@ import {researchBrand,analysisStatus,analyzeEvidence} from './brand-research.ts'
 import {brandAnalysisRequest,brandBackendStatus,analyzeBrand} from './brand-analysis.ts';
 import {readPublic,BrandError} from './brand-web.ts';
 import {validateResearch,type BrandResearch} from '../lib/brand.ts';
-import {textDeadlineError,type CreativeBackend} from './creative-engine.ts';
+import {textDeadlineError,creativeTextDeadlineSeconds,type CreativeBackend} from './creative-engine.ts';
 export function createBrandService(env:Record<string,string|undefined>,backend:CreativeBackend,read=readPublic,now=Date.now){
  type Receipt={research:BrandResearch;fingerprint:string;until:number;cacheUntil?:number;promise?:Promise<BrandResearch>;result?:BrandResearch};
  const receipts=new Map<string,Receipt>(),cache=new Map<string,Receipt>();let active=false;
@@ -32,7 +32,7 @@ export function createBrandService(env:Record<string,string|undefined>,backend:C
     if(active){r.analysisState='unavailable';r.provider={provider:env.ADSTUDIO_BRAND_MODEL?'ollama':'comfy-qwen3',available:false,reason:'Another local brand analysis is busy. Website products and non-AI planning remain usable; no queued text attempt or automatic retry.'};r.warnings.push(r.provider.reason);receipt.result=validateResearch(r);return receipt.result;}
     active=true;try{
      r.provider=env.ADSTUDIO_BRAND_MODEL?await analysisStatus(env):await brandBackendStatus(backend);
-     if(r.provider.available){try{if(env.ADSTUDIO_BRAND_MODEL){r.observations.push(...await analyzeEvidence(r.sources,r.colors,r.provider));r.aiCompleted=true;r.analysisState='completed';}else await analyzeBrand(r,backend);}catch(error){r.aiCompleted=false;r.analysisState='failed';const detail=(error instanceof Error?error.message:'Unknown text failure').replace(/[\r\n]/g,' ').slice(0,700);r.warnings.push((textDeadlineError(error)?'Local AI analysis exceeded its existing 180-second deadline.':'Local AI analysis failed validation or execution.')+' '+detail+' Website products remain available; no automatic retry.');}}
+     if(r.provider.available){try{if(env.ADSTUDIO_BRAND_MODEL){r.observations.push(...await analyzeEvidence(r.sources,r.colors,r.provider));r.aiCompleted=true;r.analysisState='completed';}else await analyzeBrand(r,backend);}catch(error){r.aiCompleted=false;r.analysisState='failed';const detail=(error instanceof Error?error.message:'Unknown text failure').replace(/[\r\n]/g,' ').slice(0,700);r.warnings.push((textDeadlineError(error)?`Local AI analysis exceeded its ${creativeTextDeadlineSeconds}-second deadline.`:'Local AI analysis failed validation or execution.')+' '+detail+' Website products remain available; no automatic retry.');}}
      else{r.analysisState='unavailable';r.warnings.push(r.provider.reason);}r.analysisMs=now()-began;receipt.result=validateResearch(r);receipt.cacheUntil=now()+(r.analysisState==='completed'?1800000:60000);return receipt.result;
     }finally{active=false;}
    };

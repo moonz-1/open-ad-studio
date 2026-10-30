@@ -18,7 +18,7 @@ import type {HeroTake} from '../../shared/lib/hero-ad.ts';
 import {creativeSnapshot,type CreativePlan} from '../../shared/lib/creative-engine.ts';
 import {browserDownload,type Download} from './download.ts';
 import {adCampaignPrompt,adScenePrompt,flux3ScenePrompt,campaignDesign,sceneDirection} from '../../shared/lib/ad-scene.ts';
-import {campaignExecutionStrategy} from '../../shared/lib/campaign-presentation.ts';
+import {campaignExecutionStrategy,fluxRestageBlock,isFluxEngine} from '../../shared/lib/campaign-presentation.ts';
 import {allowsProductMotion,productFidelityReport} from '../../shared/lib/product-fidelity.ts';
 import {campaignVideoSize} from '../../shared/lib/campaign-motion.ts';
 import {assertAdvertisingGeneration,needsAdvertisingStrategy} from '../../shared/lib/advertising-strategy.ts';
@@ -30,7 +30,7 @@ import {campaignFilmEndCard,campaignFilmPlate,campaignFilmSignature,campaignFilm
 import {defaults,type Take} from './projects.ts';
 import {resolveGenerationEngine,type GenerationEngineId,type GenerationReadiness} from './generation-engines.ts';
 import type {InspirationRecord} from './creative-service.ts';
-export type CopyEdit=Partial<Pick<StaticDesign,'headline'|'body'|'cta'|'size'|'concept'|'background'|'accent'|'textColor'>> & {graphic?:GraphicDirection};
+export type CopyEdit=Partial<Pick<StaticDesign,'productLine'|'headline'|'body'|'cta'|'size'|'concept'|'background'|'accent'|'textColor'>> & {graphic?:GraphicDirection};
 /** Merge editable copy + graphic direction onto a campaign design without flattening campaign.graphic. */
 export function applyCopyEdit(design:StaticDesign,copy:CopyEdit):StaticDesign{
  const {graphic,...rest}=copy;
@@ -74,7 +74,7 @@ export function draftFor(p:AdProject):CreativeDraft {
 }
 export type Readiness=GenerationReadiness;
 export type WebsiteImage={image:string;requestedUrl:string;sourceUrl:string;contentType:string;sha256:string;association?:{key:string;sourceId:string;pageUrl:string;pageSha256:string;researchPageSha256:string;method:string}};
-export type AppClient=Pick<typeof OSH,'upload'|'staticAd'|'shot'|'exportVideo'|'audio'> & {inspectScene?:typeof OSH.inspectScene;adBackground?:typeof OSH.adBackground;adScene?:typeof OSH.adScene;adCampaign?:typeof OSH.adCampaign;cancelBackground?:typeof OSH.cancelBackground;capabilities:()=>Promise<Readiness>;research:(website:string)=>Promise<Parameters<typeof applyResearch>[1]>;analyze?:(key:string)=>Promise<Parameters<typeof applyResearch>[1]>;image?:(body:{url:string;productKey:string;research:NonNullable<BrandProfile['research']>})=>Promise<WebsiteImage>};
+export type AppClient=Pick<typeof OSH,'upload'|'staticAd'|'shot'|'exportVideo'|'audio'> & {creativeStatus?:typeof OSH.creativeStatus;inspectScene?:typeof OSH.inspectScene;adBackground?:typeof OSH.adBackground;adScene?:typeof OSH.adScene;adCampaign?:typeof OSH.adCampaign;cancelBackground?:typeof OSH.cancelBackground;capabilities:()=>Promise<Readiness>;research:(website:string)=>Promise<Parameters<typeof applyResearch>[1]>;analyze?:(key:string)=>Promise<Parameters<typeof applyResearch>[1]>;image?:(body:{url:string;productKey:string;research:NonNullable<BrandProfile['research']>})=>Promise<WebsiteImage>};
 export const appClient:AppClient={...OSH,capabilities:async()=>{const r=await fetch('/api/hero/capabilities',{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('The local generation service could not be reached.');const data=await r.json() as Readiness;return {...data,zimage:data.zimage||{available:!!data.reimagine,reason:data.reimagine?'Local Z-Image Turbo graph is available.':'Z-Image Turbo is not available on this ComfyUI (weights or graph nodes missing).'}};},research:async website=>{const r=await fetch('/api/brand/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({website,analyze:false,deferAnalysis:true})});const b=await r.json();if(!r.ok)throw Error(b.error||'Website research failed.');return b;},analyze:async key=>{const r=await fetch('/api/brand/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key}),signal:AbortSignal.timeout(240000)});const data=await r.json();if(!r.ok)throw Error(data.error||'Optional brand analysis failed. Website products are still available.');return data;},image:async body=>{const r=await fetch('/api/brand/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)});const data=await r.json();if(!r.ok)throw Error(data.error||'Website photograph could not be imported. Upload a photograph instead.');return data;}};
 export class AdApplication {
  private websiteRevision=0;
@@ -163,6 +163,21 @@ export class AdApplication {
   if(patch.name!==undefined&&(typeof patch.name!=='string'||patch.name.length>200)||patch.description!==undefined&&(typeof patch.description!=='string'||patch.description.length>5000))throw Error('Shorten the product information.');
   Object.assign(product,patch);product.overrides=[...new Set([...(product.overrides||[]),...Object.keys(patch) as ('name'|'description')[]])];b.updated=Math.max(Date.now(),b.updated+1);p.creative!.activeId=undefined;p.creative!.step='product';const writes=await Promise.allSettled([this.store.projects.saveBrand(b),this.store.projects.save(p)]);for(const w of writes)if(w.status==='rejected')throw w.reason;
  }
+ /** Name an owner-supplied photograph as a brand product (seasonal or unlisted items). Website products keep their listed record. */
+ async nameOwnProduct(name:string){
+  this.requireWebsiteContext();if(this.store.getSnapshot().busy)throw Error('Finish the current operation first.');
+  const n=name.trim();if(!n)throw Error('Add a product name.');if(n.length>200)throw Error('Shorten the product name.');
+  const p=this.store.active(),d=draftFor(p),b=selectedBrand(p,this.store.getSnapshot().brands);if(!b)throw Error('Add your brand name first.');
+  const asset=await this.store.asset(d.sourceId);if(!asset)throw Error('Select an original photograph.');if(asset.provenance)throw Error('Website photographs keep the listed product. Correct its name in brand details.');
+  let product=d.productId?b.products.find(x=>x.id===d.productId&&!x.discovery):undefined;
+  if(!product){if(b.products.length>=100)throw Error('This brand already has 100 products.');product={id:crypto.randomUUID(),name:n,description:'',sellingPoints:'',imageIds:[]};b.products.push(product);}
+  product.name=n;product.overrides=[...new Set([...(product.overrides||[]),'name' as const])];
+  let record=b.assets.find(a=>a.assetId===asset.id);if(!record){record={id:crypto.randomUUID(),assetId:asset.id,name:asset.name,role:'product'};b.assets.push(record);}
+  record.productId=product.id;if(!product.imageIds.includes(record.id))product.imageIds.push(record.id);b.updated=Math.max(Date.now(),b.updated+1);
+  p.creative??={version:1,plans:[]};p.creative.draft={...d,productId:product.id};p.creative.activeId=undefined;p.creative.step='product';
+  const writes=await Promise.allSettled([this.store.projects.saveBrand(b),this.store.projects.save(p)]);for(const w of writes)if(w.status==='rejected')throw w.reason;
+  return product;
+ }
  async confirmWebsiteSource(accuracy:boolean,permission:boolean,expected?:{projectId:string;sourceId:string}){this.requireWebsiteContext();return this.store.run('Saving photograph confirmation',async()=>{
   const p=this.store.active(),d=draftFor(p);if(expected&&(expected.projectId!==p.id||expected.sourceId!==d.sourceId))throw Error('Selected photograph changed. Confirm the current source instead.');const asset=await this.store.asset(d.sourceId),b=selectedBrand(p,this.store.getSnapshot().brands);if(!asset?.provenance||!b)throw Error('Choose a website product photograph first.');
   validateWebsiteSource(asset.provenance,{originalSha256:await blobHash(asset.original),sha256:await blobHash(asset.normalized),brandId:b.id,productId:d.productId});
@@ -186,7 +201,7 @@ export class AdApplication {
  async navigate(step:'product'|'direction'|'result'){await this.store.flush();return this.store.edit(p=>{p.creative??={version:1,plans:[]};p.creative.step=step;});}
  async selectTake(id:string){this.requireWebsiteContext();return this.store.edit(p=>{if(!p.hero!.takes.some(t=>t.id===id))throw Error('Saved photograph is missing.');p.hero!.activeId=id;p.creative??={version:1,plans:[]};p.creative.step='result';});}
  async editOnboarding(patch:Partial<{name:string;website:string}>){this.websiteRevision++;this.discoveries.delete(this.store.active().id);return this.store.edit(p=>{p.creative??={version:1,plans:[]};p.creative.onboarding={name:'',website:'',...p.creative.onboarding,...patch};p.creative.websiteDraft=p.creative.onboarding.website;p.creative.activeId=undefined;p.creative.step='product';p.brandId=undefined;});}
- async selectSource(sourceId:string){this.requireWebsiteContext();if(draftFor(this.store.active()).sourceId===sourceId)return;return this.store.run('Opening original photograph',async()=>{const p=this.store.active(),b=selectedBrand(p,this.store.getSnapshot().brands),allowed=[p.assetId,p.hero?.settings.originalId,p.hero?.settings.briefDraft?.input.source.id,...Object.keys(p.creative?.references||{}),...(p.creative?.plans.map(e=>e.sourceId)||[]),...(b?.assets.filter(a=>a.role==='product').map(a=>a.assetId)||[])];if(!allowed.includes(sourceId)||p.hero?.takes.some(t=>t.assetId===sourceId))throw Error('Choose a saved original product photograph.');const asset=await this.store.asset(sourceId);if(!asset)throw Error('The saved original is missing. Previous records were kept.');if(asset.provenance&&asset.provenance.brandId!==b?.id)throw Error('This website photograph belongs to another brand. Switch to its brand or select a matching photograph.');await this.rememberReference(p);const sha=await blobHash(asset.normalized),cached=p.creative?.references?.[sourceId],prior=p.hero?.settings.briefDraft?.input;let known:Pick<CreativeDraft,'facts'|'productType'>|undefined=cached?.sha256===sha?cached:prior?.source.id===sourceId&&prior.source.sha256===sha?prior:undefined;if(!known){const entry=p.creative?.plans.slice().reverse().find(e=>e.sourceId===sourceId);if(entry)try{const saved=await this.creative.open(p.id,entry.id);if(saved.input.source.sha256===sha)known=saved.input;}catch{this.store.notify('The original is available, but its prior brief could not be opened. Existing records are kept.');}}p.creative??={version:1,plans:[]};p.creative.draft={...draftFor(p),sourceId,productId:asset.provenance?.productId,productType:known?.productType||'other',facts:known?{...known.facts,confirmed:false}:{description:'',arrangement:'',texture:'',container:'',confirmed:false}};p.creative.activeId=undefined;p.creative.step='product';await this.store.projects.save(p);});}
+ async selectSource(sourceId:string){this.requireWebsiteContext();if(draftFor(this.store.active()).sourceId===sourceId)return;return this.store.run('Opening original photograph',async()=>{const p=this.store.active(),b=selectedBrand(p,this.store.getSnapshot().brands),allowed=[p.assetId,p.hero?.settings.originalId,p.hero?.settings.briefDraft?.input.source.id,...Object.keys(p.creative?.references||{}),...(p.creative?.plans.map(e=>e.sourceId)||[]),...(b?.assets.filter(a=>a.role==='product').map(a=>a.assetId)||[])];if(!allowed.includes(sourceId)||p.hero?.takes.some(t=>t.assetId===sourceId))throw Error('Choose a saved original product photograph.');const asset=await this.store.asset(sourceId);if(!asset)throw Error('The saved original is missing. Previous records were kept.');if(asset.provenance&&asset.provenance.brandId!==b?.id)throw Error('This website photograph belongs to another brand. Switch to its brand or select a matching photograph.');await this.rememberReference(p);const sha=await blobHash(asset.normalized),cached=p.creative?.references?.[sourceId],prior=p.hero?.settings.briefDraft?.input;let known:Pick<CreativeDraft,'facts'|'productType'>|undefined=cached?.sha256===sha?cached:prior?.source.id===sourceId&&prior.source.sha256===sha?prior:undefined;if(!known){const entry=p.creative?.plans.slice().reverse().find(e=>e.sourceId===sourceId);if(entry)try{const saved=await this.creative.open(p.id,entry.id);if(saved.input.source.sha256===sha)known=saved.input;}catch{this.store.notify('The original is available, but its prior brief could not be opened. Existing records are kept.');}}p.creative??={version:1,plans:[]};p.creative.draft={...draftFor(p),sourceId,productId:asset.provenance?asset.provenance.productId:b?.assets.find(a=>a.assetId===sourceId&&a.productId)?.productId,productType:known?.productType||'other',facts:known?{...known.facts,confirmed:false}:{description:'',arrangement:'',texture:'',container:'',confirmed:false}};p.creative.activeId=undefined;p.creative.step='product';await this.store.projects.save(p);});}
  async openWebsite(id:string){
   const b=this.store.getSnapshot().brands.find(b=>b.id===id);if(!b)throw Error('Select a saved website.');if(this.store.getSnapshot().busy)throw Error('Finish the current operation first.');this.websiteRevision++;this.discoveries.delete(this.store.active().id);await this.store.flush();
   const current=this.store.active(),target=this.store.getSnapshot().projects.filter(p=>p.brandId===id&&!p.creative?.onboarding).sort((a,b)=>Number(b.id===current.id)-Number(a.id===current.id)||b.updated-a.updated)[0];
@@ -210,30 +225,33 @@ export class AdApplication {
   const exec=campaignExecutionStrategy(plan);
   const forceLayout=exec==='product-safe'&&(engine==='automatic'||engine==='klein');
   const selected=resolveGenerationEngine(forceLayout?'product-safe':engine==='automatic'&&needsAdvertisingStrategy(plan)?'product-safe':engine,ready);
-  if(selected.id!=='product-safe')assertAdvertisingGeneration(plan,(selected.id==='klein'&&ready.klein?.firstRunAvailable===true)||(selected.id==='flux3'&&!!ready.flux3?.available));
+  const fluxBlock=isFluxEngine(selected.id)?fluxRestageBlock(plan):'';
+  if(fluxBlock)throw Object.assign(Error(fluxBlock+' No generation was submitted.'),{code:'NOT_SUBMITTED'});
+  if(selected.id!=='product-safe')assertAdvertisingGeneration(plan,(selected.id==='klein'&&ready.klein?.firstRunAvailable===true)||(selected.id==='flux3'&&!!ready.flux3?.available)||(selected.id==='flux3-cloud'&&!!ready.flux3Cloud?.available));
   p.attempt={id:crypto.randomUUID(),status:'running',created:Date.now(),takeIds:[],engine:selected.id};await this.store.projects.save(p);
   const previous=new Set(p.hero!.takes.map(t=>t.id));try{
-   const take=selected.id==='klein'||selected.id==='flux3'?await this.generateScene(planId,plan,p.attempt!.id,selected.id):selected.id==='product-safe'?await this.generateProductSafe(planId,plan,selected.reason):await this.creative.generate(p.id,planId,selected.id==='zimage'?'zimage':'qwen');
+   const take=selected.id==='klein'||selected.id==='flux3'||selected.id==='flux3-cloud'?await this.generateScene(planId,plan,p.attempt!.id,selected.id):selected.id==='product-safe'?await this.generateProductSafe(planId,plan,selected.reason):await this.creative.generate(p.id,planId,selected.id==='zimage'?'zimage':'qwen');
    p=this.store.active();p.attempt!.status='complete';p.attempt!.takeIds=[take.id];await this.store.projects.save(p);return take;
-  }catch(e){p=this.store.active();const delivered=p.hero!.takes.filter(t=>!previous.has(t.id));p.attempt!.status=delivered.length?'complete':(selected.id==='klein'||selected.id==='flux3')?'failed':'interrupted';p.attempt!.takeIds=delivered.map(t=>t.id);p.attempt!.error=delivered.length?'The result is in this tab. Retry saving; do not regenerate.':'The submission could not be confirmed. Check saved history and the runtime job before any new generation. '+(e instanceof Error?e.message:String(e));await this.store.projects.save(p).catch(()=>{});throw e;}
+  }catch(e){p=this.store.active();const delivered=p.hero!.takes.filter(t=>!previous.has(t.id));p.attempt!.status=delivered.length?'complete':(selected.id==='klein'||selected.id==='flux3'||selected.id==='flux3-cloud')?'failed':'interrupted';p.attempt!.takeIds=delivered.map(t=>t.id);p.attempt!.error=delivered.length?'The result is in this tab. Retry saving; do not regenerate.':'The submission could not be confirmed. Check saved history and the runtime job before any new generation. '+(e instanceof Error?e.message:String(e));await this.store.projects.save(p).catch(()=>{});throw e;}
  });}
- async selectEngine(engine:GenerationEngineId){if(!['automatic','product-safe','klein','flux3','qwen','zimage'].includes(engine))throw Error('Unknown generation engine.');return this.store.edit(p=>{p.creative??={version:1,plans:[]};p.creative.generationEngine=engine;});}
- async cancelGeneration(){const p=this.store.active();if(p.attempt?.status!=='running'||(p.attempt.engine!=='klein'&&p.attempt.engine!=='flux3')||!this.client.cancelBackground)throw Error('No cancellable local background job.');return this.client.cancelBackground(p.attempt.id.replaceAll('-',''),p.id);}
- private async generateScene(planId:string,plan:CreativePlan,requestId:string,engineId:'klein'|'flux3'='klein'){
+ async selectEngine(engine:GenerationEngineId){if(!['automatic','product-safe','klein','flux3','flux3-cloud','qwen','zimage'].includes(engine))throw Error('Unknown generation engine.');return this.store.edit(p=>{p.creative??={version:1,plans:[]};p.creative.generationEngine=engine;});}
+ async cancelGeneration(){const p=this.store.active();if(p.attempt?.status!=='running'||(p.attempt.engine!=='klein'&&p.attempt.engine!=='flux3'&&p.attempt.engine!=='flux3-cloud')||!this.client.cancelBackground)throw Error('No cancellable local background job.');return this.client.cancelBackground(p.attempt.id.replaceAll('-',''),p.id);}
+ private async generateScene(planId:string,plan:CreativePlan,requestId:string,engineId:'klein'|'flux3'|'flux3-cloud'='klein'){
   const started=Date.now(),p=this.store.active(),entry=p.creative?.plans.find(e=>e.id===planId),source=await this.store.asset(plan.input.source.id);
   if(!entry?.preparedId||!source)throw Error('Review the creative direction first. Product-safe remains available.');
   await this.checkSourceUse(source.id,plan.input.brand.id,plan.input.productId);
   if(await blobHash(source.original)!==plan.input.source.originalSha256||await blobHash(source.normalized)!==plan.input.source.sha256)throw Error('Restore the exact reviewed original.');
-  const execution=campaignExecutionStrategy(plan);
+  const fluxScene=engineId==='flux3'||engineId==='flux3-cloud',fluxBlock=fluxScene?fluxRestageBlock(plan):'';
+  if(fluxBlock)throw Error(fluxBlock+' No generation was submitted.');
+  const execution=fluxScene?'creative-restage':campaignExecutionStrategy(plan);
   const image=await this.client.upload(await this.encode(source.normalized));
   const req={requestId:requestId.replaceAll('-',''),projectId:p.id,planId,preparedId:entry.preparedId,image:image.url,current:(await this.creative.context(p,source.id,plan.input)).input};
   let scene:import('../../shared/lib/ad-scene.ts').AdScene;
   let method:HeroTake['method'];
-  if(engineId==='flux3'){
-   if(execution!=='creative-restage')throw Error('FLUX 3 Image Klein is Creative Restage only. Loosen packaging/fidelity locks on the direction, or choose Product-locked Klein / Product-safe. No generation was submitted.');
-   if(!this.client.adScene)throw Error('FLUX 3 Creative Restage is unavailable locally. Choose Product-safe. No generation was submitted.');
-   // Explicit FLUX 3 only — never silent Klein. Refs are this project's uploaded source (+ optional identity).
-   scene=await this.client.adScene({...req,engine:'flux3',promptSha256:await blobHash(new Blob([flux3ScenePrompt(plan)]))});
+  if(fluxScene){
+   if(!this.client.adScene)throw Error('FLUX 3 Creative Restage is unavailable. Choose Product-safe. No generation was submitted.');
+   // Explicit FLUX 3 / Comfy Cloud only — never silent Klein. Refs are this project's uploaded source (+ optional identity).
+   scene=await this.client.adScene({...req,engine:engineId,promptSha256:await blobHash(new Blob([flux3ScenePrompt(plan)]))});
    method='creative-restage';
   }else if(execution==='creative-restage'){
    if(!this.client.adScene)throw Error('Creative Restage is unavailable locally. Choose Product-locked Klein, Product-safe, or lower creativity. No generation was submitted.');

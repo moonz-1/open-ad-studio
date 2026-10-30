@@ -8,9 +8,9 @@ export function photographicDirection(input:CreativeInput,context:CreativeContex
  const keep=c.background==='keep',clean=c.background==='clean';
  const environment=keep?'Retain the original surroundings and materials.':clean?'Clean incidental background distractions; retain the original set and materials.':settings[n];
  const composition=c.crop==='none'?'Retain complete source framing and every product edge; adjust light within that composition.':[
-  'Place the complete source grouping below centre with an asymmetric supporting plane; reserve a calm upper-right field for lettering.',
-  'Bring the observed surface forward while keeping all required units, packaging and identity anchors inside frame; reserve a narrow calm upper copy band.',
-  'Place the intact silhouette right of centre against broad tonal planes; leave the left third quiet for separate brand lettering.',
+  'Place the complete source grouping below centre with an asymmetric supporting plane; leave a calm empty upper-right open field with no writing or symbols.',
+  'Bring the observed surface forward while keeping all required units, packaging and identity anchors inside frame; leave a narrow calm empty upper band.',
+  'Place the intact silhouette right of centre against broad tonal planes; leave the left third as empty unlettered materials.',
  ][n];
  const camera=c.angle==='none'||input.intent==='enhancement'?'Match the source viewpoint; do not expose unseen faces.':'Use only a small reference-supported perspective adjustment; preserve visible proportions and avoid inventing hidden faces.';
  const lighting=[
@@ -18,5 +18,5 @@ export function photographicDirection(input:CreativeInput,context:CreativeContex
   'A low grazing key across the observed surface with restrained opposing fill; reveal real texture without inventing relief.',
   'A broad soft key and controlled edge separation; keep the complete silhouette legible against the tonal planes.',
  ][n];
- return {composition,camera,environment,lighting,hierarchy:`Product first. Emphasize the owner-observed focus: ${strategy.focus} Keep the stated copy field empty; typeset words separately.`,layout:(['editorial','spotlight','poster'] as const)[n]};
+ return {composition,camera,environment,lighting,hierarchy:`Product first. Emphasize the owner-observed focus: ${strategy.focus} Keep the adjacent open field empty of writing, symbols and posters.`,layout:(['editorial','spotlight','poster'] as const)[n]};
 }

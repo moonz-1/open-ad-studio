@@ -1,0 +1,43 @@
+{
+  "arguments": [
+    {
+      "title": "High Performance Scents",
+      "idea": "Experience powerful fragrances that last all day",
+      "objective": "consideration",
+      "audienceHypothesis": " consumers seek long-lasting scents",
+      "tension": " concern about short-lived fragrances",
+      "businessFit": " High Performance Scents directly addresses the need for long-lasting fragrances",
+      "feeling": " confident in the product's ability to deliver lasting scents",
+      "focusId": "photo-description",
+      "mechanismId": "surface-light",
+      "proofId": "brand-description",
+      "proofQuote": "High Performance Scents"
+    },
+    {
+      "title": "Low Impact Packaging",
+      "idea": " eco-friendly packaging reduces environmental impact",
+      "objective": "consideration",
+      "audienceHypothesis": " consumers care about environmental responsibility",
+      "tension": " concern about plastic waste",
+      "businessFit": " Low Impact Packaging directly addresses the concern about environmental impact",
+      "feeling": " reassured by the brand's commitment to sustainability",
+      "focusId": "photo-description",
+      "mechanismId": "detail-to-whole",
+      "proofId": "brand-description",
+      "proofQuote": "Low Impact Packaging"
+    },
+    {
+      "title": "100% Natural Perfume",
+      "idea": " natural ingredients ensure safety and purity",
+      "objective": "consideration",
+      "audienceHypothesis": " consumers seek safe and pure products",
+      "tension": " concern about synthetic ingredients",
+      "businessFit": " 100% Natural Perfume directly addresses the concern about synthetic ingredients",
+      "feeling": " assured of the product's natural and safe composition",
+      "focusId": "photo-description",
+      "mechanismId": "silhouette-contrast",
+      "proofId": "brand-description",
+      "proofQuote": "100% Natural Perfume"
+    }
+  ]
+}

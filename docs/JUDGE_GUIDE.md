@@ -28,7 +28,7 @@ Models and ComfyUI are not bundled. Follow [model setup and terms](MODELS_AND_LI
 
 Local inference runs through `@comfyorg/sdk`, the loopback `comfy-api-proxy`, and native ComfyUI graphs in [`shared/workflows`](../shared/workflows/). Creative Intelligence compiles the selected `creative-brief-v2` into the photographic scene; approved headline/body/CTA are typeset separately by Graphic Art Director. Product geometry also guides copy placement. Identity/framing failures must remain visible and can block export; typography does not repair incorrect products.
 
-The published snapshot audited here is `3c922518`. The incoming Comfy Cloud branch is **not integrated or accepted in this staging release**. Its native graph, exact weights, Journey generation, credits and saved output must be verified before its behavior is advertised. RunPod is a separate opt-in controller; dry-run proof does not mean a worker is prepared. All spending remains disabled in this audit.
+The published base audited independently was `3c922518`. This candidate integrates the committed Comfy Cloud adapter plus the release-hardening fixes. Cloud remains **experimental and spending-off by default**: no new paid Journey inference is certified here. Authored, Basic and native AI planning remain distinct. RunPod is a separate opt-in controller; dry-run proof does not mean a worker is prepared. All spending stayed disabled in this audit. See [current release status](release/STATUS.md) for the final integration checkpoint and measured limits.
 
 Keep ComfyUI and the app on loopback. Never publish `.env`, keys or customer images. App code is MIT; external software, fonts and model weights retain their own terms. See [third-party notices](THIRD_PARTY_NOTICES.md).
 

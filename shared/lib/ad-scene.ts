@@ -6,9 +6,10 @@ import type {StaticDesign} from './static-ad.ts';
 import {sourceViewpoint} from './campaign-presentation.ts';
 import {buildCompositionPlan,compositionPlanPrompt} from './composition-dynamics.ts';
 import {dynamicsToFlux3Spatial} from './flux3-spatial.ts';
+import {assertPhotographyPromptClean,scrubPhotographyPrompt} from './photograph-prompt-scrub.ts';
 
 export type CampaignArchetype='food-editorial'|'beauty-sensory'|'graphic-energy'|'material-study';
-export type AdScene=Omit<AdBackground,'model'> & {identityProfile?:import('./product-identity-profile.ts').ProductIdentityProfile|null;identityVerify?:import('./product-identity-verify.ts').IdentityVerifyReport;framingQuality?:import('./framing-quality.ts').FramingQualityReport;inspection?:{method:string;sourceSha256:string;outputSha256:string};inspectionError?:string;executionKind?:'artifact-replay'|'model-output';model:'klein-scene'|'flux3-klein-scene'|'klein-integrated'|'klein-harmonized'|'editorial-original';background?:AdBackground;cutout?:{url:string;sha256:string;jobId:string;method:string;box:{x:number;y:number;width:number;height:number};width:number;height:number;assetId?:string};placement?:{x:number;y:number;width:number;height:number;rotation?:number};sourceSha256:string;archetype:CampaignArchetype;warning:string;preHarmonize?:{url:string;sha256:string};fidelityMode?:'product-fidelity'|'creative-restage'|'hybrid-harmonize'};
+export type AdScene=Omit<AdBackground,'model'> & {identityProfile?:import('./product-identity-profile.ts').ProductIdentityProfile|null;identityVerify?:import('./product-identity-verify.ts').IdentityVerifyReport;framingQuality?:import('./framing-quality.ts').FramingQualityReport;letteringScan?:import('./photograph-lettering.ts').LetteringScan;inspection?:{method:string;sourceSha256:string;outputSha256:string};inspectionError?:string;executionKind?:'artifact-replay'|'model-output';model:'klein-scene'|'flux3-klein-scene'|'klein-integrated'|'klein-harmonized'|'editorial-original';background?:AdBackground;cutout?:{url:string;sha256:string;jobId:string;method:string;box:{x:number;y:number;width:number;height:number};width:number;height:number;assetId?:string};placement?:{x:number;y:number;width:number;height:number;rotation?:number};sourceSha256:string;archetype:CampaignArchetype;warning:string;preHarmonize?:{url:string;sha256:string};fidelityMode?:'product-fidelity'|'creative-restage'|'hybrid-harmonize'};
 export type CampaignSurfacePresentation='composite'|'editorial-original';
 const bounded=(s:string|undefined,n=550)=>(s||'').replace(/\s+/g,' ').trim().slice(0,n);
 /** Decisions are derived from the reviewed plan, not a hidden per-brand prompt. */
@@ -30,7 +31,8 @@ export function flux3ScenePrompt(plan:CreativePlan,identity?:import('./product-i
  const {concept:c}=sceneDirection(plan);
  const dynamics=plan.dynamics||buildCompositionPlan(plan);
  const spatial=dynamicsToFlux3Spatial(dynamics,{environment:c.environment,identity});
- return [assertCreativeBrief(plan).sceneCaption,identity?'Reference product proportions:\n'+identityConstraintLines(identity).filter(line=>!/^MISSING_IDENTITY_EVIDENCE:|^Viewpoint limitation:/.test(line)).join('\n'):'',photoOnlyDirection(spatial.captionWithBoxes,plan),'Reference geometry must not be reshaped to fit layout guides. Keep one continuous photographic environment with natural contact, not a floating graphic shelf.'].filter(Boolean).join('\n\n');
+ const raw=[assertCreativeBrief(plan).sceneCaption,identity?'Reference product proportions:\n'+identityConstraintLines(identity).filter(line=>!/^MISSING_IDENTITY_EVIDENCE:|^Viewpoint limitation:/.test(line)).join('\n'):'',photoOnlyDirection(spatial.captionWithBoxes,plan),'Reference geometry must not be reshaped to fit layout guides. Keep one continuous photographic environment with natural contact, not a floating graphic shelf. Background and open field must stay unlettered — blank materials only outside genuine product packaging from the reference.'].filter(Boolean).join('\n\n');
+ return assertPhotographyPromptClean(scrubPhotographyPrompt(raw));
 }
 export function adScenePrompt(plan:CreativePlan){return assertCreativeBrief(plan).sceneCaption;}
 /** Legacy caption retained for saved-plan diagnostics, not new scene requests. */

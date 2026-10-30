@@ -1,6 +1,6 @@
 // Compact image-generation engine probe for Ad Studio. Deterministic product-safe
 // design stays available without ComfyUI; AI modes report honest readiness only.
-export type GenerationEngineId='automatic'|'product-safe'|'qwen'|'zimage'|'klein'|'flux3';
+export type GenerationEngineId='automatic'|'product-safe'|'qwen'|'zimage'|'klein'|'flux3'|'flux3-cloud';
 export type EngineCapability={
  id:GenerationEngineId;
  label:string;
@@ -15,6 +15,7 @@ export type EngineCapability={
 export type GenerationReadiness={
  klein?:{mode?:string;available:boolean;firstRunAvailable?:boolean;installed:boolean;tested:boolean;status?:string;reason:string};
  flux3?:{promptUpsampler?:{enabled:boolean;compatibilityBypass:boolean;note:string};available:boolean;authorized?:boolean;installed?:boolean;workflowReady?:boolean;status?:string;reason:string;missingFiles?:string[];resources?:{reason?:string;status?:string};runpodAutoprov?:boolean};
+ flux3Cloud?:{available:boolean;authorized?:boolean;enabled?:boolean;spendApproved?:boolean;credentialsReady?:boolean;workflowReady?:boolean;compatConfirmed?:boolean;weightProfile?:string;status?:string;reason:string;endpoint?:string;estimatedCreditsNote?:string};
  runpod?:{autoprov?:boolean;liveAuthorized?:boolean;stages?:string[];gate?:{ok:boolean;reason:string;spendableUSD:number};createBlockedReason?:string|null;estimatedJobUSD?:number;maxJobUSD?:number;protectedReserveUSD?:number};
  finish:boolean;
  qwen:{available:boolean;reason?:string;missingFiles?:string[]};
@@ -40,6 +41,10 @@ const FLUX3:Omit<EngineCapability,'available'|'status'|'reason'>={
  id:'flux3',label:'FLUX 3 Image Klein',short:'Creative Restage · dual-ref mi2i',
  generatesAiPixels:true,preservesOriginalPhotograph:false,requiresWeights:true
 };
+const FLUX3_CLOUD:Omit<EngineCapability,'available'|'status'|'reason'>={
+ id:'flux3-cloud',label:'Comfy Cloud / FLUX',short:'Hosted FLUX 3 Klein · credits',
+ generatesAiPixels:true,preservesOriginalPhotograph:false,requiresWeights:false
+};
 const Z_MIN=3.5*1024*1024*1024,Q_MIN=8*1024*1024*1024;
 /** Unknown VRAM never counts as sufficient. Busy never blocks product-safe. */
 function memoryStatus(ready:GenerationReadiness,minBytes:number):{ok:boolean;status:EngineCapability['status'];reason:string}{
@@ -62,6 +67,7 @@ export function describeEngines(ready:GenerationReadiness):EngineCapability[]{
   :{...ZIMAGE,available:false,status:zInstalled?zMem.status:'not-installed',reason:zInstalled?(zServerOk?zMem.reason:(ready.zimage?.reason||zMem.reason)):(ready.zimage?.reason||'No compatible local still-image weights are installed for this runtime.')};
  const klein=kleinCapability(ready);
  const flux3=flux3Capability(ready);
+ const flux3Cloud=flux3CloudCapability(ready);
  const autoTarget=resolveGenerationEngine('automatic',ready);
  const automatic:EngineCapability={
   id:'automatic',label:'Automatic',short:autoTarget.label,
@@ -73,7 +79,7 @@ export function describeEngines(ready:GenerationReadiness):EngineCapability[]{
   preservesOriginalPhotograph:autoTarget.preservesOriginalPhotograph,
   requiresWeights:autoTarget.requiresWeights
  };
- return [automatic,productSafe,flux3,klein,qwen,zimage];
+ return [automatic,productSafe,flux3Cloud,flux3,klein,qwen,zimage];
 }
 function zimageReady(ready:GenerationReadiness){
  const wanted=!!ready.zimage?.available||!!ready.reimagine;
@@ -107,8 +113,18 @@ function flux3Capability(ready:GenerationReadiness):EngineCapability{
   .filter(Boolean).join(' ');
  return {...FLUX3,available:false,status,reason:why||'FLUX 3 Image Klein is not ready. Choose Product-safe design or another available engine.'};
 }
+function flux3CloudCapability(ready:GenerationReadiness):EngineCapability{
+ const f=ready.flux3Cloud;
+ if(!f)return {...FLUX3_CLOUD,available:false,status:'offline',reason:'Comfy Cloud capability was not reported. Restart the Journey server on this worktree. Product-safe remains available.'};
+ if(f.available)return {...FLUX3_CLOUD,available:true,status:'available',reason:f.reason||'Comfy Cloud / FLUX is ready. One Generate click submits the pinned mi2i workflow to Cloud credits.'};
+ const status=(f.status==='awaiting-owner-auth'||f.status==='not-installed'||f.status==='offline'||f.status==='busy'
+  ?f.status
+  :(!f.authorized?'awaiting-owner-auth':'unsupported')) as EngineCapability['status'];
+ return {...FLUX3_CLOUD,available:false,status,reason:f.reason||'Comfy Cloud / FLUX is not ready. Configure server-side COMFY_API_KEY and spend flags; Product-safe remains available.'};
+}
 export function resolveGenerationEngine(choice:GenerationEngineId,ready:GenerationReadiness):EngineCapability{
  if(choice==='product-safe')return {...PRODUCT_SAFE,available:true,status:'available',reason:'Product-safe design · original photograph'};
+ if(choice==='flux3-cloud'){const f=flux3CloudCapability(ready);if(!f.available)throw Error(f.reason);return f;}
  if(choice==='flux3'){const f=flux3Capability(ready);if(!f.available)throw Error(f.reason);return f;}
  if(choice==='klein'){const k=kleinCapability(ready);if(!k.available)throw Error(k.reason);return k;}
  if(choice==='qwen'){
@@ -120,10 +136,10 @@ export function resolveGenerationEngine(choice:GenerationEngineId,ready:Generati
   return {...ZIMAGE,available:true,status:'available',reason:'Experimental local image model'};
  }
  // Automatic never opts an unverified runtime into its first inference job.
- // Never silently select FLUX 3 — it must be an explicit owner choice.
+ // Never silently select FLUX 3 or Comfy Cloud — those require explicit owner choice.
  if(ready.klein?.available)return kleinCapability(ready);
  if(qwenReady(ready).ok)return {...QWEN,available:true,status:'available',reason:'Automatic selected Qwen Image Edit'};
  if(zimageReady(ready).ok)return {...ZIMAGE,available:true,status:'available',reason:'Automatic selected local AI image'};
  return {...PRODUCT_SAFE,available:true,status:'available',reason:'Automatic selected Product-safe design · original photograph'};
 }
-export function engineSelectable(engines:EngineCapability[]){return engines.filter(e=>e.id==='automatic'||e.id==='product-safe'||e.id==='flux3'||e.available||e.id==='qwen'||e.id==='zimage'||e.id==='klein');}
+export function engineSelectable(engines:EngineCapability[]){return engines.filter(e=>e.id==='automatic'||e.id==='product-safe'||e.id==='flux3'||e.id==='flux3-cloud'||e.available||e.id==='qwen'||e.id==='zimage'||e.id==='klein');}
