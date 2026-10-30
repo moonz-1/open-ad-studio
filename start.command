@@ -1,9 +1,15 @@
-#!/bin/bash
+#!/bin/sh
 cd "$(dirname "$0")" || exit 1
 if ! command -v node >/dev/null 2>&1; then
-  echo "Install Node.js 22.18+ from https://nodejs.org then run this again."
+  echo "Install Node.js 22.18 or newer from https://nodejs.org, then reopen this file."
+  printf "Press Enter to close. "
+  read -r answer
   exit 1
 fi
-if [ ! -d node_modules/@comfyorg/sdk ]; then npm ci || exit 1; fi
-echo "Open Ad Studio: http://127.0.0.1:8340/adstudio/journey.html"
-npm start
+node adstudio/scripts/launch.mjs
+result=$?
+if [ "$result" -ne 0 ]; then
+  printf "Press Enter to close. "
+  read -r answer
+fi
+exit "$result"

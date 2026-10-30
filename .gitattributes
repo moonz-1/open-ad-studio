@@ -1,0 +1,4 @@
+
+start.command text eol=lf
+adstudio/scripts/*.mjs text eol=lf
+release-source.json export-subst
