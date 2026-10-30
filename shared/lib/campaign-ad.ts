@@ -1,4 +1,5 @@
 import {assertConsumerCopy} from './consumer-copy.ts';
+import {isDataImage} from './data-image.ts';
 /** Campaign-surface SVG for product-safe and composite stills — authentic product pixels; brand-directed plate. */
 import type {StaticDesign,StaticImages} from './static-ad.ts';
 import {contrast,ink,luminance} from './static-ad.ts';
@@ -187,7 +188,7 @@ export function campaignSVG(dIn:StaticDesign,images:StaticImages,w:number,h:numb
  const editorial=d.campaign?.presentation==='editorial-original';
  const arch=d.campaign?.archetype||'material-study';
  const rect=(x:number,y:number,width:number,height:number,fill:string,extra='')=>parts.push(`<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="${fill}" ${extra}/>`);
- const image=(data:string|undefined,x:number,y:number,width:number,height:number,fit='xMidYMid meet')=>{if(data){if(!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(data))throw Error('Only embedded local raster images are supported.');parts.push(`<image href="${data}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="${fit}"/>`);}};
+ const image=(data:string|undefined,x:number,y:number,width:number,height:number,fit='xMidYMid meet')=>{if(data){if(!isDataImage(data))throw Error('Only embedded local raster images are supported.');parts.push(`<image href="${data}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="${fit}"/>`);}};
 
  let graphicPlan:GraphicArtPlan|undefined;
 

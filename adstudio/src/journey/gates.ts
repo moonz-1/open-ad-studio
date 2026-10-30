@@ -24,7 +24,7 @@ export function directionGate(selected:boolean){
 }
 /** Directions already reviewed in Direction; Create Ads does not need a second batch checkbox. */
 export function editionsGate(opts:{caps:boolean;resolved?:{label:string;reason:string}|null;queue:number;engineReason?:string;engineConflict?:string}){
- if(!opts.caps)return 'Checking local generation readiness… Stay on this page; Product-safe design works without ComfyUI.';
+ if(!opts.caps)return 'Checking which engines are ready…';
  if(!opts.queue)return 'Reviewed directions are out of date. Go back to Discover, develop again, then return here.';
  if(!opts.resolved)return opts.engineReason||'The selected generation engine is not ready. Open Advanced · generation engine and choose an available option.';
  if(opts.engineConflict)return opts.engineConflict;

@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {JourneyService,emptyJourney,journeyFor,campaignQueue,reviewKey} from '../src/journey-service.ts';
+import {advancedFactsFrom} from '../src/journey/advanced-facts.ts';
+import {dataImageParts,isDataImage} from '../../shared/lib/data-image.ts';
 import {WorkspaceStore} from '../src/workspace-store.ts';
 import {memoryDriver,newProject,migrateProject} from '../src/projects.ts';
 import {inputFixture} from './creative-fixtures.mjs';
@@ -8,6 +10,19 @@ import {assembleCreativePlan,selectCreativePlan,fallbackConcepts,creativeContext
 const input=inputFixture();
 const makePlan=(id='plan-a')=>assembleCreativePlan(input,fallbackConcepts(input,creativeContext(input)),{mode:'deterministic',reason:'Explicit CPU fixture'},id);
 function source(plan){const i=plan.input;return {id:i.source.id,name:'original.png',draft:{sourceId:i.source.id,facts:i.facts,productType:i.productType,productId:i.productId,request:i.request||'',intent:i.intent||'campaign',format:i.format||'feed',seed:i.seed??42,notes:i.notes||'',constraints:i.constraints},permission:true,planId:plan.id,review:reviewKey(plan)};}
+test('large data URLs are accepted without regex stack overflow',()=>{
+ const payload='A'.repeat(2_000_000),url='data:image/png;base64,'+payload;
+ assert.equal(dataImageParts(url)?.type,'png');
+ assert.equal(isDataImage(url),true);
+ assert.equal(isDataImage('data:image/png;base64,!!!'),false);
+ assert.equal(isDataImage('not-an-image'),false);
+});
+test('advanced product facts are read from live fields, not stale draft props',()=>{
+ const fields={count:'4',arrangement:'four rolls together in one tray',texture:'',container:'foil tray'};
+ const root={querySelector:(sel)=>{const k=sel.match(/data-fact="([^"]+)"/)?.[1];return k?{value:fields[k]??''}:null;}};
+ assert.deepEqual(advancedFactsFrom(root),{count:4,arrangement:'four rolls together in one tray',texture:'',container:'foil tray'});
+ assert.deepEqual(advancedFactsFrom(null),{});
+});
 test('quantity distributes every source; each variation is a distinct explicitly listed concept',()=>{const a=makePlan(),b=makePlan('plan-b');b.input.source.id='source-b';const sources=[source(a),source(b)],q=campaignQueue(sources,[a,b],6);assert.deepEqual(q.map(x=>x.sourceId),[sources[0].id,sources[1].id,sources[0].id,sources[1].id,sources[0].id,sources[1].id]);assert.equal(new Set(q.map(c=>c.sourceId+c.conceptId)).size,6);assert.equal(new Set(q.map(c=>c.id)).size,6);assert.throws(()=>campaignQueue(sources,[a,b],1));assert.throws(()=>campaignQueue(sources,[a,b],7));assert.throws(()=>campaignQueue([{...sources[0],permission:false}],[a],1));});
 test('any prompt, concept, source, seed or brand change invalidates the reviewed batch',()=>{const p=makePlan(),s=source(p);for(const change of [p=>p.input.seed++,p=>p.input.request='Changed direction',p=>p.input.source.sha256='0'.repeat(64),p=>p.input.brand.updated++,p=>p.concepts[0].environment='Changed setting']){const edited=structuredClone(p);change(edited);assert.throws(()=>campaignQueue([s],[edited],1),/Review/);}});
 test('additive Journey data roundtrips through actual project persistence without schema changes',async()=>{const driver=memoryDriver(),store=await new WorkspaceStore(driver).initialize(),p=store.active();p.creative={version:1,plans:[],journey:{...emptyJourney(),stage:5,sources:[source(makePlan())],quantity:2}};const original=new Blob(['retained original']);await store.projects.save(p,{id:'original',name:'original',original,normalized:original,width:10,height:10,created:1});await store.flush();const reopened=await new WorkspaceStore(driver).initialize();assert.equal(reopened.active().creative.journey.stage,5);assert.equal(await(await reopened.asset('original')).original.text(),'retained original');const legacy=newProject('Legacy');assert.deepEqual(journeyFor(migrateProject(legacy)),emptyJourney());assert.equal(reopened.active().version,3);});

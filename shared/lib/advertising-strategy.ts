@@ -12,7 +12,7 @@ const stem=(w:string)=>w.replace(/ies$/,'y').replace(/(?:sses|zzes)$/,m=>m.slice
 const words=(s:string)=>new Set(s.toLowerCase().match(/[a-z]{4,}/g)?.filter(w=>!stop.has(w))||[]);
 const stems=(s:string)=>new Set([...words(s)].map(stem));
 const overlap=(a:string,b:string)=>{const x=words(a),y=words(b);return [...x].filter(w=>y.has(w)).length/Math.max(1,new Set([...x,...y]).size);};
-const engages=(prose:string,evidence:string)=>[...stems(prose)].some(w=>stems(evidence).has(w));
+export const engages=(prose:string,evidence:string)=>[...stems(prose)].some(w=>stems(evidence).has(w));
 export function strategyIssues(s:AdvertisingStrategy,context:CreativeContext):string[]{
  const issues:string[]=[];
  if(!s||s.version!==2||Object.keys(s).some(k=>!['version','objective','proof',...fields].includes(k)))return ['Missing or invalid advertising strategy.'];

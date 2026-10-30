@@ -63,3 +63,14 @@ test('repairs remove only the unsupported phrase and keep imaginative wording',(
  assert.equal(out[0].title,'A quieter green','Creative headline without a factual claim is untouched');
  assert.equal(out[1].title,'Quiet cedar','Only the unsupported word is removed from a headline');
 });
+
+test('a business reason that ignores its own cited evidence is replaced with the quoted words and recorded',()=>{
+ const context={productName:'Tiramisu Cinnamon Rolls',facts:[{id:'brand-story',kind:'source',text:'It started with a simple question about weekend baking.'}]};
+ const arg={title:'Simple Beginnings',idea:'A story behind the cinnamon rolls',audienceHypothesis:'Families looking for quality treats',tension:'Lack of understanding about the brand',businessFit:'Personal challenge highlights quality',feeling:'Emotional connection',proofId:'brand-story',proofQuote:'It started with a simple question'};
+ const {value,repairs}=repairArgumentClaims({arguments:[arg]},context);
+ assert.match(value.arguments[0].businessFit,/It started with a simple question/);
+ assert.equal(value.arguments[0].tension,arg.tension,'model wording outside the failing field is kept');
+ assert.ok(repairs.some(r=>r.field==='businessFit'&&r.from===arg.businessFit&&r.method==='replaced'));
+ const grounded={...arg,businessFit:'A simple question started every batch'};
+ assert.equal(repairArgumentClaims({arguments:[grounded]},context).repairs.length,0,'grounded reasons are untouched');
+});

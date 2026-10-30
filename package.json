@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Open Ad Studio \u2014 local open-weights product advertising on ComfyUI",
+  "description": "Open Ad Studio — local open-weights product advertising on ComfyUI",
   "engines": {
     "node": ">=22.18"
   },
@@ -25,7 +25,7 @@
     "test:catalog": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/catalog-discovery.test.mjs adstudio/scripts/catalog-flow.test.mjs adstudio/scripts/catalog-ui.test.mjs",
     "test:qwen-text": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/qwen-text-reliability.test.mjs adstudio/scripts/qwen-request-readiness.test.mjs",
     "test:local-ai": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/klein-background.test.mjs adstudio/scripts/klein-composition.test.mjs adstudio/scripts/klein-app-flow.test.mjs adstudio/scripts/klein-scene.test.mjs adstudio/scripts/klein-scene-app.test.mjs adstudio/scripts/product-campaign.test.mjs",
-    "test:journey": "node --experimental-transform-types --test adstudio/scripts/journey.test.mjs adstudio/scripts/gates.test.mjs adstudio/scripts/claim-repair.test.mjs adstudio/scripts/flux-engine-compat.test.mjs",
+    "test:journey": "node --experimental-transform-types --test adstudio/scripts/journey.test.mjs adstudio/scripts/gates.test.mjs adstudio/scripts/claim-repair.test.mjs adstudio/scripts/flux-engine-compat.test.mjs adstudio/scripts/data-image.test.mjs",
     "test:release": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/campaign-film-art.test.mjs adstudio/scripts/journey.test.mjs adstudio/scripts/campaign-motion.test.mjs adstudio/scripts/creative-intelligence.test.mjs adstudio/scripts/generation-engines.test.mjs adstudio/scripts/klein-scene.test.mjs",
     "test:klein-bootstrap": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/klein-bootstrap.test.mjs adstudio/scripts/klein-background.test.mjs adstudio/scripts/klein-scene.test.mjs adstudio/scripts/product-campaign.test.mjs adstudio/scripts/generation-engines.test.mjs",
     "test:film": "node --experimental-transform-types --test --test-concurrency=1 adstudio/scripts/film.test.mjs adstudio/scripts/video-quality.test.mjs adstudio/scripts/campaign-film-art.test.mjs",

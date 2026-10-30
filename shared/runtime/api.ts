@@ -1,3 +1,4 @@
+import {isBase64} from '../lib/data-image.ts';
 import {inspectScenePixels} from './scene-inspection.ts';
 import {verifyPlanningExecution,cancelOwnedPlanningJob} from './creative-proof.ts';
 import {filmGraph,filmReadiness,physicalFreeMiB,filmModel} from './film.ts';
@@ -456,8 +457,9 @@ async function capabilities(env:Env){
 /** Browser-normalized PNG only; saved under an opaque API-owned filename. */
 async function upload(body: any) {
   if (typeof body.image !== "string" || !body.image.startsWith("data:image/png;base64,")) throw new HttpError(400, "upload must be a PNG data URL");
+  if (body.image.length - 22 > 4 * Math.ceil(5 * 1024 * 1024 / 3)) throw new HttpError(413, "PNG exceeds 5 MB");
   const encoded = body.image.slice(22);
-  if (!encoded || !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded)) throw new HttpError(400, "invalid PNG encoding");
+  if (!encoded || !isBase64(encoded,5*1024*1024)) throw new HttpError(400, "invalid PNG encoding");
   const data = Buffer.from(encoded, "base64");
   if (data.length > 5 * 1024 * 1024) throw new HttpError(413, "PNG exceeds 5 MB");
   if (data.length < 33 || data.subarray(0, 8).toString("hex") !== "89504e470d0a1a0a" || data.subarray(12, 16).toString() !== "IHDR") throw new HttpError(400, "invalid PNG");
@@ -1009,7 +1011,7 @@ function middleware(env: Env,setup:RuntimeSetup,rewriter:PromptRewriter,creative
       const status = e instanceof HttpError || e instanceof ComposeError || e instanceof ReferenceError || e instanceof BrandError || e instanceof StaticAdError || e instanceof HeroError || e instanceof PromptRewriteError || e instanceof CreativeError ? e.status : 500;
       if(isApi&&url.pathname!=='/api/errors')errors.add(`${req.method} ${url.pathname}`,e,{status,requestId:typeof req.headers['x-osh-request']==='string'?req.headers['x-osh-request']:undefined});
       if (status === 500) console.error(`[api] ${url.pathname} failed:`, e);
-      send(res, status, { error: status === 500 ? "generation failed (see server log)" : e.message });
+      send(res, status, { error: status === 500 ? (url.pathname === "/api/upload" ? "Your photograph could not be prepared on this computer. Your work is saved; try again. Technical details are in the server log." : "The studio service hit an unexpected problem. Your work is saved; try again. Technical details are in the server log.") : e.message });
     }
   };
 }

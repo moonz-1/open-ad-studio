@@ -1,3 +1,4 @@
+import {dataImageParts} from './data-image.ts';
 import {validateStaticDesign} from './static-ad.ts';
 import {validateGenerationDraft,type GenerationDraft} from './product-brief.ts';
 // Ad Studio's bounded hero workflow. No model, browser or storage side effects.
@@ -26,7 +27,7 @@ export function validateHeroWorkspace(w:HeroWorkspace){
 export function heroCrop(width:number,height:number,s:Pick<HeroSettings,'zoom'|'x'|'y'>){const w=Math.min(width,height*.8)/s.zoom,h=w/ .8;return {width:Math.max(1,Math.floor(w)),height:Math.max(1,Math.floor(h)),x:Math.floor((width-w)*s.x),y:Math.floor((height-h)*s.y)};}
 export const xml=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]!));
 export function heroAdSVG(hero:string,logo:string|undefined,copy:{headline:string;productName:string;website:string}){
- for(const d of [hero,logo].filter(Boolean))if(!/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(d!))throw Error('Use embedded PNG images.');
+ for(const d of [hero,logo].filter(Boolean))if(dataImageParts(d)?.type!=='png')throw Error('Use embedded PNG images.');
  if(!copy.headline.trim()||copy.headline.length>60||copy.productName.length>45||copy.website.length>65)throw Error('Shorten the ad copy.');
  // Keep text predictable: explicit lines, bounded line length, no arbitrary SVG.
  const lines=copy.headline.trim().split('\n');if(lines.length>2||lines.some(l=>l.length>25))throw Error('Use up to two headline lines, 25 characters per line.');

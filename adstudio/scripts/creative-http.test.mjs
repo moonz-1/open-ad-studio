@@ -1,3 +1,5 @@
+import {detailedPng} from './image-fixture.mjs';
+import {createHash} from 'node:crypto';
 // Real Vite/API, offline Comfy fixture. No UI, models or image inference.
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
@@ -34,5 +36,15 @@ try{
  assert.equal((await post('creative/plan',{image:upload.body.url,input:{...input,source:{...input.source,sha256:'e'.repeat(64)}}})).status,409);
  assert.equal((await fetch(base+'/api/hero/capabilities')).status,200);assert.equal((await fetch(base+'/api/setup')).status,200,'Director runtime setup route remains present');
  const served=Buffer.from(await(await fetch(base+upload.body.url)).arrayBuffer());assert.deepEqual(served,png);
+ // Large genuine PNG through the actual prepare endpoint, with hash/provenance retained.
+ const big=detailedPng(),bigSha=createHash('sha256').update(big).digest('hex'),bigInput={...inputFixture(),projectId:'large-image-validation',source:{...inputFixture().source,sha256:bigSha,originalSha256:bigSha,width:1024,height:1024}};
+ const bu=await post('upload',{image:dataURL(big)});assert.equal(bu.status,200,JSON.stringify(bu.body));owned.push(join(outputs,bu.body.url.slice(9)));
+ const bp=await post('creative/plan',{image:bu.body.url,input:bigInput,planningMode:'basic'});assert.equal(bp.status,200,JSON.stringify(bp.body));owned.push(join(outputs,'creative-plans',bp.body.id));
+ const bb={planId:bp.body.id,current:bigInput,image:bu.body.url,original:dataURL(big),confirmation:{direction:true,facts:true}};
+ assert.equal((await post('creative/prepare',bb)).status,200,'Large actual PNG is prepared without regex stack overflow');
+ assert.equal((await post('creative/prepare',{...bb,original:dataURL(png)})).status,409,'Altered original still rejected');
+ assert.equal((await post('creative/prepare',{...bb,original:'data:image/png;base64,AB=='})).status,400,'Noncanonical base64 rejected');
+ assert.equal((await post('creative/prepare',{...bb,original:'data:image/gif;base64,AAAA'})).status,400,'Unsupported original type rejected');
+ assert.equal((await post('upload',{image:'data:image/png;base64,'+'A'.repeat(4*Math.ceil(5*1024*1024/3)+4)})).status,413,'Encoded size rejected before decoding');
  console.log('PASS real Vite/HTTP: creative status/plan/read/review/prepare routes, missing model, wrong-project/stale/confirmation/hash failures, raw source served unchanged, existing Hero and Director runtime routes. NO browser or inference.');
 }finally{await vite?.close();await new Promise(ok=>backend?backend.close(ok):ok());for(const file of owned){if(!file.startsWith(outputs+sep))throw Error('Unsafe fixture cleanup');if(file.endsWith('.png'))await unlink(file);else if(file.includes(sep+'creative-plans'+sep))await rm(file,{recursive:true,force:true});}}

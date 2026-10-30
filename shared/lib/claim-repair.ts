@@ -5,6 +5,7 @@
 // only when the remainder is no longer a usable phrase is the field replaced
 // with evidence-grounded wording. Every change is recorded. Evidence is never invented.
 import type {CreativeContext} from './creative-engine.ts';
+import {engages} from './advertising-strategy.ts';
 
 export type ClaimRepair={argument:number;field:string;from:string;to:string;claims:string[];reason:string;method:'removed'|'replaced'};
 
@@ -64,6 +65,10 @@ export function repairArgumentClaims(value:any,context:CreativeContext):{value:a
    const kept=removeClaims(text,claims,field),usable=kept&&!unsupportedClaims(kept,evidence).length&&!(field==='title'&&titles.has(norm(kept)));
    next[field]=usable?(field==='title'||field==='idea'?kept[0].toUpperCase()+kept.slice(1):kept):grounded[field];
    repairs.push({argument:index,field,from:text,to:next[field],claims,method:usable?'removed':'replaced',reason:usable?'Unsupported factual phrase removed; the remaining creative wording is the model’s own.':'Unsupported factual claim not found in owner/source evidence; replaced with evidence-grounded wording.'});
+  }
+  if(quoteOk&&typeof next.businessFit==='string'&&typeof next.tension==='string'&&!engages(next.businessFit+' '+next.tension,quote)){
+   const from=next.businessFit;next.businessFit=grounded.businessFit;
+   repairs.push({argument:index,field:'businessFit',from,to:next.businessFit,claims:[],method:'replaced',reason:'The business reason did not use its cited evidence; replaced with the brand’s own words.'});
   }
   if(typeof next.title==='string')titles.add(norm(next.title));
   return next;

@@ -1,10 +1,11 @@
-import {useState,type ReactNode} from 'react';
+import {useRef,useState,type ReactNode} from 'react';
 import type {JourneyService,JourneyState} from '../journey-service.ts';
 import {photographSummary} from '../journey-service.ts';
 import type {CreativeDraft} from '../creative-service.ts';
 import {brandFieldStatus,type BrandField,type BrandProfile,type BrandProduct} from '../../../shared/lib/brand.ts';
 import {Photo,WebsiteCard} from './components.tsx';
 import {sourceIdentified} from './gates.ts';
+import {advancedFactsFrom} from './advanced-facts.ts';
 
 export type BrandEditable='name'|'description'|'tone'|'visualStyle';
 type Props={
@@ -35,6 +36,16 @@ export function Discover({service,j,brand,draft,fallbackName,busy,notice,gate,ru
  const product=productOf(draft.productId),website=!!product?.discovery,productName=product?.name.trim()||'';
  const acknowledged=!!j.imageUse,analysing=brand?.research?.analysisState==='pending';
  const sourceChanged=()=>service.sourceChanged(current?.permission||false);
+ const advanced=useRef<HTMLDetailsElement>(null);
+ const persistAdvanced=()=>{
+  const next=advancedFactsFrom(advanced.current),patch:Partial<typeof draft.facts>={};
+  if(next.count!==draft.facts.count)patch.count=next.count;
+  if((next.arrangement||'')!==(draft.facts.arrangement||''))patch.arrangement=next.arrangement||'';
+  if((next.texture||'')!==(draft.facts.texture||''))patch.texture=next.texture||'';
+  if((next.container||'')!==(draft.facts.container||''))patch.container=next.container||'';
+  if(!Object.keys(patch).length)return;
+  edit('Saving facts',async()=>{await app.patchFacts(patch);await sourceChanged();});
+ };
  const facts=[product?.description,product?.sellingPoints].map(x=>x?.trim().replace(/^[—–-]\s*/,'')).filter((x):x is string=>!!x);
  const summary=draft.facts.description.trim();
  const candidates=brand?.products.filter(x=>x.discovery&&!j.sources.some(s=>s.draft.productId===x.id))||[],[showAll,setShowAll]=useState(false),shown=showAll?candidates:candidates.slice(0,8);
@@ -68,7 +79,7 @@ export function Discover({service,j,brand,draft,fallbackName,busy,notice,gate,ru
      {current&&<BriefRow label="Verified product facts" value="" disabled={busy}>{facts.length
       ?<ul className="brief-facts">{facts.map(f=><li key={f}>{f}</li>)}</ul>
       :<p className="brief-empty">{website?'The website listing has no product description.':'Only the details you add are used. Nothing is invented.'}</p>}</BriefRow>}
-     {current&&<BriefRow label="Photograph summary" value={summary||(productName?photographSummary(productName):'')} badge={summary?undefined:'Automatic'} placeholder="Named automatically from the product" multiline disabled={busy} save={v=>edit('Saving photograph summary',async()=>{await app.editFacts({...draft.facts,description:v});await sourceChanged();})}>
+     {current&&<BriefRow label="Photograph summary" value={summary||(productName?photographSummary(productName):'')} badge={summary?undefined:'Automatic'} placeholder="Named automatically from the product" multiline disabled={busy} save={v=>edit('Saving photograph summary',async()=>{await app.patchFacts({description:v});await sourceChanged();})}>
       <p>{summary||(productName?photographSummary(productName):'Named automatically once the product has a name.')}</p><small>Planning is text-only and does not inspect photo pixels.</small></BriefRow>}
      <BriefRow label="Brand tone" value={brand?.dna.tone||''} badge={brand?.dna.tone?provenance(brand,'tone'):undefined} placeholder={analysing?'Waiting for brand analysis…':'Not set'} disabled={busy||!brand} save={v=>edit('Saving tone',()=>saveBrandField('tone',v))}/>
      <BriefRow label="Visual palette" value={(brand?.palette?.approved||brand?.colors||[]).join(', ')} badge={brand?.colors.length?(brand.overrides.includes('colors')?'Your edit':'From your website'):undefined} placeholder="#102b23, #f2f3e9" disabled={busy||!brand} save={v=>edit('Saving palette',async()=>{const colors=v.split(',').map(x=>x.trim()).filter(Boolean);if(colors.some(x=>!/^#[a-f0-9]{6}$/i.test(x)))throw Error('Use hex colors such as #102b23.');const b=structuredClone(brand!);b.colors=colors;b.palette={approved:colors,preferred:colors};b.overrides=[...new Set([...b.overrides,'colors'])];await app.saveBrand(b);await service.save(j=>{for(const src of j.sources)delete src.review;});})}>
@@ -76,18 +87,18 @@ export function Discover({service,j,brand,draft,fallbackName,busy,notice,gate,ru
      <BriefRow label="Photographic direction" value={brand?.dna.visualStyle||''} badge={brand?.dna.visualStyle?provenance(brand,'visualStyle'):undefined} placeholder={analysing?'Waiting for brand analysis…':brand?.research?.analysisState==='failed'?'Not set':'Suggested from your brand once available'} multiline disabled={busy||!brand} save={v=>edit('Saving photographic direction',()=>saveBrandField('visualStyle',v))}/>
      {current&&<BriefRow label="Campaign angle" value={draft.request||''} badge={draft.request?'Your edit':'Optional'} placeholder="Optional, for example: a gift for the holidays" multiline disabled={busy} save={v=>edit('Saving campaign angle',async()=>{await app.editDraft({request:v});await sourceChanged();})}/>}
     </dl>
-    {current&&<details className="brief-advanced"><summary>Advanced · product details &amp; planning</summary>
+    {current&&<details ref={advanced} className="brief-advanced"><summary>Advanced · product details &amp; planning</summary>
      <label>Product category<select value={draft.productType} disabled={busy} onChange={e=>{const value=e.target.value as typeof draft.productType;run('Saving category',async()=>{await app.editDraft({productType:value});await sourceChanged();});}}>{['other','packaged-goods','digital','service','cookies','cinnamon-rolls'].map(v=><option key={v} value={v}>{v}</option>)}</select></label>
-     <label>Photograph approach<select aria-label="Photograph approach" disabled={busy} value={draft.constraints?.fidelity==='medium'||draft.constraints?.fidelity==='low'?'restage':'preserve'} onChange={e=>{const restage=e.currentTarget.value==='restage';run('Saving photograph approach',async()=>{await app.editDraft({constraints:{...draft.constraints,fidelity:restage?'medium':'high',exactCount:restage?false:draft.facts.count!==undefined,arrangement:'roughly',angle:'slight',crop:'moderate',creativity:restage?'high':'medium'}});await sourceChanged();});}}><option value="preserve">Preserve product geometry</option><option value="restage">Creative Restage - compare with original</option></select></label>
-     <label>Visible count<input type="number" min="1" max="100" defaultValue={draft.facts.count||''} key={draft.sourceId+'count'} onBlur={e=>edit('Saving count',async()=>{await app.editFacts({...draft.facts,count:e.target.value?Number(e.target.value):undefined});await sourceChanged();})}/></label>
-     {(['arrangement','texture','container'] as const).map(k=><label key={k+draft.sourceId}>{k}<input defaultValue={draft.facts[k]} onBlur={e=>edit('Saving facts',async()=>{await app.editFacts({...draft.facts,[k]:e.target.value});await sourceChanged();})}/></label>)}
+     <label>Photograph approach<select aria-label="Photograph approach" disabled={busy} value={draft.constraints?.fidelity==='medium'||draft.constraints?.fidelity==='low'?'restage':'preserve'} onChange={e=>{persistAdvanced();const restage=e.currentTarget.value==='restage';run('Saving photograph approach',async()=>{await app.editDraft({constraints:{...draft.constraints,fidelity:restage?'medium':'high',exactCount:restage?false:draft.facts.count!==undefined,arrangement:restage?'roughly':'exactly',angle:'slight',crop:'moderate',creativity:restage?'high':'medium'}});await sourceChanged();});}}><option value="preserve">Preserve product geometry</option><option value="restage">Creative Restage - compare with original</option></select></label>
+     <label>Visible count<input data-fact="count" type="number" min="1" max="100" defaultValue={draft.facts.count||''} key={draft.sourceId+'count'} onChange={persistAdvanced} onBlur={persistAdvanced}/></label>
+     {(['arrangement','texture','container'] as const).map(k=><label key={k+draft.sourceId}>{k[0].toUpperCase()+k.slice(1)}<input data-fact={k} defaultValue={draft.facts[k]} onChange={persistAdvanced} onBlur={persistAdvanced}/></label>)}
      <label>Planning mode<select aria-label="Planning mode" value={j.planningMode||'ai'} disabled={busy} onChange={e=>{const mode=e.currentTarget.value as 'ai'|'basic';edit('Saving planning mode',()=>service.save(j=>{j.planningMode=mode;}));}}><option value="ai">AI Creative Director - local Qwen</option><option value="basic">Basic draft - no AI planning</option></select></label>
-     <small>{product?.sourceUrl?<><a href={product.sourceUrl} target="_blank" rel="noreferrer">Product page ↗</a> · </>:null}Source ID {current.id}</small>
+     {product?.sourceUrl?<small><a href={product.sourceUrl} target="_blank" rel="noreferrer">Product page ↗</a></small>:null}
     </details>}
     {acknowledged
      ?<p className="image-use is-ack" data-testid="image-use-ack"><span>✓</span> You confirmed permission to use this campaign’s photographs. Each source keeps its original file and hash.</p>
      :<div className="image-use" data-testid="image-use"><p>Use photographs you own or have permission to use in advertising. Images found on a website are not automatically licensed.</p><button disabled={busy} onClick={()=>run('Saving image use',()=>service.acknowledgeImageUse())}>I have permission for this campaign’s photos</button></div>}
-    <div className="brief-action"><span>{(j.planningMode||'ai')==='basic'?'Basic draft: non-AI visual studies only.':'Local Qwen develops three directions for each product. If it is busy, your directions start as soon as it is free.'}</span>{!!gate&&!busy&&<p className="gate-reason" id="discover-gate" role="status">{gate}</p>}<button className="primary" data-testid="journey-develop" disabled={busy||!!gate} aria-describedby={gate?'discover-gate':undefined} onClick={develop}>Develop creative directions <b>→</b></button></div>
+    <div className="brief-action"><span>{(j.planningMode||'ai')==='basic'?'Basic draft: non-AI visual studies only.':'Local Qwen develops three directions for each product. If it is busy, your directions start as soon as it is free.'}</span>{!!gate&&!busy&&<p className="gate-reason" id="discover-gate" role="status">{gate}</p>}<button className="primary" data-testid="journey-develop" disabled={busy||!!gate} aria-describedby={gate?'discover-gate':undefined} onClick={()=>{persistAdvanced();develop();}}>Develop creative directions <b>→</b></button></div>
    </aside>
   </div>
  </section>;

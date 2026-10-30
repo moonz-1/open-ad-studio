@@ -134,3 +134,10 @@ test('synthetic shelf that stops short of the frame edges is still DISCONNECTED_
  const report=evaluateFramingQuality(fakeShelf(),{framingMode:'full-product'});
  assert.ok(report.findings.some(f=>f.code==='DISCONNECTED_SUPPORT'||f.code==='PRODUCT_TOO_SMALL'));
 });
+
+// A continuous tabletop with different edge brightness is not a finite support slab.
+test('vignetted continuous tabletop is not a disconnected platform',()=>{
+ const photo=png(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500"><defs><linearGradient id="g"><stop stop-color="#38382e"/><stop offset=".5" stop-color="#aaa392"/><stop offset="1" stop-color="#d9d0bc"/></linearGradient></defs><rect width="400" height="500" fill="#33382f"/><rect y="300" width="400" height="200" fill="url(#g)"/><ellipse cx="225" cy="405" rx="95" ry="12" fill="#37352d"/><rect x="145" y="180" width="110" height="220" fill="#e3ded1"/></svg>`);
+ const report=evaluateFramingQuality(photo,{framingMode:'full-product'});
+ assert.ok(!report.findings.some(f=>f.code==='DISCONNECTED_SUPPORT'),JSON.stringify(report));
+});

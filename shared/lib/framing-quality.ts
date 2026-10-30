@@ -18,10 +18,12 @@ export type FramingFinding={
   |'WEAK_SEGMENTATION'
   |'FRAMING_MODE_MISMATCH'
   |'PRODUCT_TOO_SMALL'
-  |'DISCONNECTED_SUPPORT';
+  |'DISCONNECTED_SUPPORT'
+  |'SUPPORT_REVIEW_REQUIRED';
  severity:'block'|'warn'|'info';
  message:string;
  edge?:'left'|'right'|'top'|'bottom';
+ evidence?:{bandY:number;bandSpan:number;upperWidth:number;leftBoundaryContrast:number;rightBoundaryContrast:number;continuousGround:boolean};
 };
 
 export type FramingQualityReport={
@@ -98,7 +100,7 @@ export function detectDisconnectedSupport(
  // Scan lower band (bottom 18% of bbox + slight below) for flat mid-tone ledge rows.
  const bandY0=y0+Math.floor((y1-y0)*0.78);
  const bandY1=Math.min(h,y1+Math.floor(h*0.02));
- let best:{span:number;mean:number;variance:number;y:number}|undefined;
+ let best:{span:number;mean:number;variance:number;y:number;minX:number;maxX:number}|undefined;
  for(let y=bandY0;y<bandY1;y+=Math.max(1,Math.floor((bandY1-bandY0)/6)||1)){
   let sum=0,sq=0,n=0,minX=w,maxX=0;
   for(let x=Math.max(0,x0-Math.floor(w*0.15));x<Math.min(w,x1+Math.floor(w*0.15));x+=step){
@@ -109,20 +111,35 @@ export function detectDisconnectedSupport(
   if(n<12)continue;
   const mean=sum/n,variance=Math.max(0,sq/n-mean*mean),span=maxX-minX;
   if(variance>140)continue;
-  if(!best||span>best.span)best={span,mean,variance,y};
+  if(!best||span>best.span)best={span,mean,variance,y,minX,maxX};
  }
- // A ground plane that runs out of both sides of the frame is a continuous floor or tabletop, not a
- // floating platform with visible ends.
- const reachesSides=(row:number,mean:number)=>{
-  const at=(x:number)=>{const i=(row*w+x)*4;return Math.abs(luma(data[i],data[i+1],data[i+2])-mean)<16;};
-  let left=0,right=0;for(let x=0;x<Math.floor(w*0.04);x++){if(at(x))left++;if(at(w-1-x))right++;}
-  return left>w*0.03&&right>w*0.03;
+ // A vignetted/gradient tabletop can differ greatly from the frame-edge mean. Follow
+ // adjacent colour steps from each candidate end to the frame, instead of demanding
+ // the same luminance at both edges. A finite slab has abrupt boundaries at both ends.
+ const colour=(x:number,y:number)=>{const i=(y*w+Math.max(0,Math.min(w-1,x)))*4;return [data[i],data[i+1],data[i+2]];};
+ const contrastAt=(x:number,y:number,dir:number)=>{
+  const inside=colour(x-dir*step,y),outside=colour(x+dir*Math.max(step,Math.floor(w*0.015)),y);
+  return Math.max(...inside.map((v,i)=>Math.abs(v-outside[i])));
  };
- if(best&&best.span>upperWidth*1.35&&best.span>w*0.45&&best.mean>bgMean+22&&!reachesSides(best.y,best.mean)){
-  return{
-   code:'DISCONNECTED_SUPPORT',severity:'block',
-   message:'Product appears to sit on a hard synthetic shelf/platform rather than a continuous photographic ground plane.'
-  };
+ const smoothToEdge=(x:number,y:number,dir:number)=>{
+  const hop=Math.max(1,Math.floor(w*0.004));let previous=colour(x,y);
+  for(let next=x+dir*hop;next>=0&&next<w;next+=dir*hop){const c=colour(next,y);if(Math.max(...c.map((v,i)=>Math.abs(v-previous[i])))>18)return false;previous=c;}
+  return true;
+ };
+ if(best&&best.span>upperWidth*1.35&&best.span>w*0.45&&best.mean>bgMean+22){
+  const leftBoundaryContrast=contrastAt(best.minX,best.y,-1),rightBoundaryContrast=contrastAt(best.maxX,best.y,1);
+  const continuousGround=smoothToEdge(best.minX,best.y,-1)&&smoothToEdge(best.maxX,best.y,1);
+  const evidence={bandY:best.y/h,bandSpan:best.span/w,upperWidth:upperWidth/w,leftBoundaryContrast,rightBoundaryContrast,continuousGround};
+  if(!continuousGround){
+   const finiteEnds=leftBoundaryContrast>24&&rightBoundaryContrast>24;
+   return finiteEnds?{
+    code:'DISCONNECTED_SUPPORT',severity:'block',evidence,
+    message:'A broad flat support has two abrupt visible ends. Inspect the saved photo: the support may be disconnected from the scene.'
+   }:{
+    code:'SUPPORT_REVIEW_REQUIRED',severity:'warn',evidence,
+    message:'The automatic check cannot establish how the product meets the surface. Review the saved photo and contact shadow; no floating-product defect is established.'
+   };
+  }
  }
  // Floating cutout just below bbox: flat void distinct from continuous set bg.
  const baseY=Math.min(h-2,y1);
@@ -139,8 +156,8 @@ export function detectDisconnectedSupport(
   const cMean=cSum/cN,uMean=uSum/uN,uVar=Math.max(0,uSq/uN-uMean*uMean);
   if(Math.abs(uMean-bgMean)>=22&&uMean<40&&uVar<50&&cMean>70){
    return{
-    code:'DISCONNECTED_SUPPORT',severity:'warn',
-    message:'Contact region under the product looks like a floating cutout (flat void) rather than a grounded photographic shadow.'
+    code:'SUPPORT_REVIEW_REQUIRED',severity:'warn',
+    message:'A dark region beneath the product needs visual review. This measurement alone cannot distinguish a contact shadow from a gap.'
    };
   }
  }

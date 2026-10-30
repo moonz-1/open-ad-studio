@@ -9,6 +9,7 @@ import {inflateSync} from 'node:zlib';
 import {heroSource,heroSha,HeroError} from './hero-ad.ts';
 import {validateHeroSettings} from '../lib/hero-ad.ts';
 import {reviewedPromptFor,generationPrompt,type GenerationDraft} from '../lib/product-brief.ts';
+import {dataImageParts} from '../lib/data-image.ts';
 const workflows=join(dirname(fileURLToPath(import.meta.url)),'../workflows');
 type Graph=Record<string,{class_type:string;inputs:Record<string,any>}>;
 type Weight={file:string;bytes:number;sha256:string};
@@ -61,9 +62,9 @@ export async function validateQwenRequest(body:any,root:string){
  if(s.method!=='reimagine'||s.imageModel!=='qwen-fp8'||s.sourceKind!=='original'||!d)throw new HeroError(400,'Select Qwen and an original photograph with a reviewed brief.');
  try{if(reviewedPromptFor(d,{sourceId:s.sourceId,sourceKind:s.sourceKind,adapter:'qwen-fp8',seed:s.seed})!==s.prompt||generationPrompt(d)!==s.prompt)throw Error('Prompt differs from the reviewed text.');if(d.input.brand?.id!==(s.brandId||undefined)||d.input.productName!==s.productName||d.input.productId!==s.productId)throw Error('Brand/product selection differs from the reviewed brief.');}catch(e){throw new HeroError(409,(e as Error).message);}
  const source=await heroSource(root,body.image);if(source.sha256!==d.input.source.sha256)throw new HeroError(409,'Reference bytes changed after review. Re-upload and review the source.');
- const match=typeof body.original==='string'&&body.original.match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/);if(!match)throw new HeroError(400,'Send the saved original photograph for hash verification.');const original=Buffer.from(match[2],'base64');
+ const parsed=typeof body.original==='string'?dataImageParts(body.original):undefined;if(!parsed)throw new HeroError(400,'Send the saved original photograph for hash verification.');const original=Buffer.from(parsed.encoded,'base64');
  if(original.length>10*1024*1024||original.length<16||heroSha(original)!==d.input.source.originalSha256)throw new HeroError(409,'Original photograph bytes do not match the reviewed source.');
- const originalType=original.subarray(0,8).toString('hex')==='89504e470d0a1a0a'?'png':original.subarray(0,3).toString('hex')==='ffd8ff'?'jpeg':original.subarray(0,4).toString()==='RIFF'&&original.subarray(8,12).toString()==='WEBP'?'webp':null;if(originalType!==match[1])throw new HeroError(400,'Original photo format does not match its media type.');
+ const originalType=original.subarray(0,8).toString('hex')==='89504e470d0a1a0a'?'png':original.subarray(0,3).toString('hex')==='ffd8ff'?'jpeg':original.subarray(0,4).toString()==='RIFF'&&original.subarray(8,12).toString()==='WEBP'?'webp':null;if(originalType!==parsed.type)throw new HeroError(400,'Original photo format does not match its media type.');
  return {s,d,source,original,originalType};
 }
 export async function generateQwenHero(body:any,root:string,transport:QwenTransport){
