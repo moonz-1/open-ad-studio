@@ -8,9 +8,10 @@ const argumentKeys=[...sceneFields,'focusId','mechanismId','title','idea','objec
 const strategyKeys=['version','objective','audienceHypothesis','tension','businessFit','feeling','memory','focus','opening','payoff','proof'];
 function allowedKeys(path:string[]):string[]{
  const joined=path.join('.');
- if(path.length===0)return ['arguments','concepts','text'];
+ if(path.length===0)return ['arguments','concepts','text','first','second','third'];
  if(joined==='concepts.*')return conceptKeys;
  if(joined==='arguments.*')return argumentKeys;
+ if(['first','second','third'].includes(joined))return ['title','reason','tension','interpretation','support','backdrop','key','shadows','highlights','palette'];
  if(joined==='concepts.*.strategy'||joined==='arguments.*.strategy')return strategyKeys;
  if(joined==='concepts.*.strategy.proof.*'||joined==='arguments.*.strategy.proof.*')return ['id','quote'];
  if(joined==='concepts.*.scores')return ['impact','relevance','accuracy','feasibility'];
