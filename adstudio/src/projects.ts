@@ -29,7 +29,12 @@ export function migrateProject(value:unknown):AdProject {
  const video=(url:unknown)=>typeof url==='string'&&/^\/outputs\/[a-f0-9]{16}\.(webm|mp4)$/.test(url);
  const integer=(n:unknown,min:number,max:number)=>typeof n==='number'&&Number.isInteger(n)&&n>=min&&n<=max;
  if(!Array.isArray(takes)||takes.some((t:any)=>!t||typeof t.id!=='string'||!t.id||!video(t.source)||(t.background&&!video(t.background))||!t.settings||!['camera','locked','creative'].includes(t.mode)||!['16:9','9:16','1:1'].includes(t.ratio)||!integer(t.width,16,4096)||!integer(t.height,16,4096)||t.width*t.height>4096*2160||!integer(t.frames,1,100000)||!integer(t.fps,1,120)||!Array.isArray(t.exports)||t.exports.some((e:any)=>!e||!video(e.url))))throw new Error('Invalid saved history. Saved data was not overwritten.');
- return {...p,version:3,settings,takes,composition:p.version===3?validateComposition(p.composition):emptyComposition(),hero:p.hero?validateHeroWorkspace(p.hero):heroDefaults(),staticAds:p.staticAds?validateStaticWorkspace(p.staticAds):emptyStaticAds()} as AdProject;
+ // Product-safe is local deterministic composition, so an interrupted attempt
+ // with no delivered take has no unverified model job to acknowledge. Keep all
+ // AI/unknown engines conservative and require an explicit new Generate click.
+ const attempt=p.attempt&&typeof p.attempt==='object'?{...p.attempt}:undefined;
+ if(attempt?.engine==='product-safe'&&attempt.status==='interrupted'&&Array.isArray(attempt.takeIds)&&attempt.takeIds.length===0){attempt.status='failed';attempt.error='Product-safe composition did not finish. Your original is saved; you can try again.';}
+ return {...p,...(attempt?{attempt}:{}),version:3,settings,takes,composition:p.version===3?validateComposition(p.composition):emptyComposition(),hero:p.hero?validateHeroWorkspace(p.hero):heroDefaults(),staticAds:p.staticAds?validateStaticWorkspace(p.staticAds):emptyStaticAds()} as AdProject;
 }
 export interface ProjectDriver {all():Promise<unknown[]>;put(project:AdProject,assets?:ProductAsset[],media?:MediaAsset[]):Promise<void>;asset(id:string):Promise<ProductAsset|undefined>;media?(id:string):Promise<MediaAsset|undefined>;brands?():Promise<unknown[]>;putBrand?(brand:BrandProfile,assets:ProductAsset[]):Promise<void>}
 export class Projects {
