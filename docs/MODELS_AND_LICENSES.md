@@ -1,16 +1,14 @@
-> Current consolidated RC: [verified application, port 8341, evidence and remaining live blockers](CONSOLIDATED_RC.md). This record supersedes older branch/URL/pending-integration statements below.
-
-> Integrated RC update (2026-10-29): [current acceptance](RC_ACCEPTANCE.md) supersedes the historical pending-integration/frozen-code statements below. All three committed sources are merged; live FLUX/LTX acceptance and owner publication remain separate.
-
-> Incoming-model review: [FLUX 3 / SAM / LTX license delta](MODEL_LICENSE_REVIEW.md). This inventory describes the earlier baseline; final incoming model setup is not yet integrated.
-
-> Current release scope: image-focused; final image branch acceptance is pending. Video is frozen at `fb27680` after an interrupted LTX decode with no footage. Models listed below are dependencies/code paths, not claims of successful generation. See [current readiness](RELEASE_READINESS.md).
-
 # Models, workflows and submission configuration
 
 No weights are distributed. An open-weight license is not automatically an OSI open-source license or unrestricted commercial permission. The user is responsible for accepting the applicable model terms before download/use. Do not describe a missing model as operational.
 
-## Image submission configuration and retained optional paths
+## Current FLUX.3 contract
+
+The optional FLUX.3 Image Klein BF16 mi2i runtime is documented in [FLUX3_RUNTIME](FLUX3_RUNTIME.md), with exact component filenames in `shared/workflows/flux3_klein_bf16_mi2i_contract.json`. Its model distribution uses the [FLUX Kommunity License](https://huggingface.co/black-forest-labs/flux-3-image-klein-comfy); it is not covered by this repository's MIT license. Commercial use depends on upstream qualifying-user terms. Qwen components have separate Apache-2.0 terms as recorded in the contract. Accept the applicable terms before download or use.
+
+FLUX prompt-upsampler bypass is an explicit compatibility limitation, not the full intended workflow. The upstream model card recommends expanded scene captions through a prompt upsampler. No new live FLUX run is asserted by this documentation. Incoming Comfy Cloud support remains separate until a verified release handoff.
+
+## Local image configuration and retained optional paths
 
 | Path | Model / license | Code and source |
 |---|---|---|

@@ -1,0 +1,82 @@
+{
+  "auditedPublishedCommit": "3c92251815960ec8bdfc1fc2354cf8bff4ad36eb",
+  "publicRepository": {
+    "full_name": "moonz-1/open-ad-studio",
+    "private": false,
+    "visibility": "public",
+    "default_branch": "main",
+    "license": "MIT"
+  },
+  "nodeVersion": "22.20.0",
+  "freshLockedInstall": "completed",
+  "freshProductionBuild": "completed",
+  "baselineSourceSha256": "45d6dc24b90a48c39b1693f9e1fc02f4ee1280e07176034a6ed4604a079ab700",
+  "browser": {
+    "desktop": {
+      "title": "Open Ad Studio \u00b7 Creative Journey",
+      "heading": "What are we\ncreating?",
+      "overflow": false
+    },
+    "mobile": {
+      "overflow": false,
+      "headerActions": true
+    },
+    "blocked": {
+      "/.env": 404,
+      "/.git/config": 404,
+      "/outputs/submission-audit/public-repository.json": 404
+    },
+    "errors": [],
+    "failed": []
+  },
+  "cpuSuites": {
+    "npm-test": {
+      "tests": 61,
+      "pass": 61,
+      "fail": 0,
+      "skipped": 0
+    },
+    "test-release": {
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "skipped": 0
+    },
+    "test-consolidated-final": {
+      "tests": 49,
+      "pass": 49,
+      "fail": 0,
+      "skipped": 0
+    },
+    "test-runpod": {
+      "tests": 16,
+      "pass": 16,
+      "fail": 0,
+      "skipped": 0
+    },
+    "test-flux3": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    },
+    "test-film": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    }
+  },
+  "security": {
+    "publicCommitsScanned": 3,
+    "textFileRevisionsScanned": 1392,
+    "untriagedCredentialPatternCandidates": 0,
+    "trackedMediaWeightsPrivateKeys": [],
+    "historicalPhotograph": "adstudio/assets/field-study.png",
+    "historicalPhotographRights": "owner resolution required",
+    "apiGraphCount": 18,
+    "nodeTypeCount": 63
+  },
+  "inference": "not run; CPU fixtures are not AI outputs",
+  "cloudIntegration": "not applied; pending verified Cursor handoff"
+}

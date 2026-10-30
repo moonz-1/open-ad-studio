@@ -8,6 +8,8 @@ Open Ad Studio is a local web application for the [Comfy Org Open Source Higgsfi
 
 ---
 
+For a quick evaluation, read the [judge guide](docs/JUDGE_GUIDE.md). The [recording plan](docs/SUBMISSION.md) and [release handoff](docs/release/STAGING.md) distinguish verified behavior from pending Cloud acceptance.
+
 ## Features
 
 | Area | What you get |
@@ -150,7 +152,7 @@ Issues and PRs that improve reliability, docs, and open-weight paths are welcome
 
 ## Source lineage
 
-Standalone application extracted from Ad Studio work that began in the open-higgsfield collaboration. RC source commit: **`78b42e3`**. Public release commit: **`755bab8`**. See [NOTICE](NOTICE).
+Standalone application extracted from Ad Studio work that began in the open-higgsfield collaboration. RC source commit: **`78b42e3`**. Initial public release commit: **`755bab8`**. The audited published snapshot is **`3c922518`**; this staging branch does not yet contain the incoming Comfy Cloud implementation. See [NOTICE](NOTICE).
 
 ---
 

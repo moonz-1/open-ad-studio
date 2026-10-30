@@ -22,7 +22,7 @@ Third-party open-weight models (install separately; not redistributed here)
 See docs/MODELS_AND_LICENSES.md and shared/workflows/CONTRACT.md.
 
 Examples (verify current upstream licenses before use):
-- FLUX.3 Image Klein / FLUX.2 Klein — Black Forest Labs terms (Kommunity / check card)
+- FLUX.3 Image Klein: FLUX Kommunity License; FLUX.2 Klein 4B FP8: Apache-2.0 (other variants differ)
 - Qwen text / image packs — Apache-2.0 where stated by upstream packaging
 - LTX-Video / LTX-2.5 — Lightricks community / open weights licenses (some gated)
 - Stable Audio Open — Stability AI Community License (optional soundtrack)
