@@ -98,7 +98,7 @@ export function detectDisconnectedSupport(
  // Scan lower band (bottom 18% of bbox + slight below) for flat mid-tone ledge rows.
  const bandY0=y0+Math.floor((y1-y0)*0.78);
  const bandY1=Math.min(h,y1+Math.floor(h*0.02));
- let best:{span:number;mean:number;variance:number}|undefined;
+ let best:{span:number;mean:number;variance:number;y:number}|undefined;
  for(let y=bandY0;y<bandY1;y+=Math.max(1,Math.floor((bandY1-bandY0)/6)||1)){
   let sum=0,sq=0,n=0,minX=w,maxX=0;
   for(let x=Math.max(0,x0-Math.floor(w*0.15));x<Math.min(w,x1+Math.floor(w*0.15));x+=step){
@@ -109,9 +109,16 @@ export function detectDisconnectedSupport(
   if(n<12)continue;
   const mean=sum/n,variance=Math.max(0,sq/n-mean*mean),span=maxX-minX;
   if(variance>140)continue;
-  if(!best||span>best.span)best={span,mean,variance};
+  if(!best||span>best.span)best={span,mean,variance,y};
  }
- if(best&&best.span>upperWidth*1.35&&best.span>w*0.45&&best.mean>bgMean+22){
+ // A ground plane that runs out of both sides of the frame is a continuous floor or tabletop, not a
+ // floating platform with visible ends.
+ const reachesSides=(row:number,mean:number)=>{
+  const at=(x:number)=>{const i=(row*w+x)*4;return Math.abs(luma(data[i],data[i+1],data[i+2])-mean)<16;};
+  let left=0,right=0;for(let x=0;x<Math.floor(w*0.04);x++){if(at(x))left++;if(at(w-1-x))right++;}
+  return left>w*0.03&&right>w*0.03;
+ };
+ if(best&&best.span>upperWidth*1.35&&best.span>w*0.45&&best.mean>bgMean+22&&!reachesSides(best.y,best.mean)){
   return{
    code:'DISCONNECTED_SUPPORT',severity:'block',
    message:'Product appears to sit on a hard synthetic shelf/platform rather than a continuous photographic ground plane.'
@@ -137,6 +144,37 @@ export function detectDisconnectedSupport(
    };
   }
  }
+}
+
+/** Product extent for composed sets (two-tone walls, floor planes, soft shadows) where one border mean
+ * cannot separate product from background. Background = everything reachable from the frame border through
+ * small colour steps on a 128px box-averaged image; the product stays enclosed by its own outline.
+ * Products whose lower surfaces match the set colour can only be under-measured by this method. */
+export function measureByBorderFlood(bytes:Uint8Array|Buffer,step=8,size=128):{bbox:NormRect;coverage:number;fill:number}|undefined{
+ const img=decodePngRgba(bytes);if(!img)return;
+ const {width:W,height:H,data}=img;
+ const S=Math.max(1,Math.floor(Math.max(W,H)/size)),w=Math.floor(W/S),h=Math.floor(H/S);if(w<16||h<16)return;
+ const C=new Float32Array(w*h*3);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0;for(let yy=0;yy<S;yy++)for(let xx=0;xx<S;xx++){const i=((y*S+yy)*W+(x*S+xx))*4;r+=data[i];g+=data[i+1];b+=data[i+2];}const k=(y*w+x)*3,n=S*S;C[k]=r/n;C[k+1]=g/n;C[k+2]=b/n;}
+ const near=(a:number,b:number)=>Math.max(Math.abs(C[a*3]-C[b*3]),Math.abs(C[a*3+1]-C[b*3+1]),Math.abs(C[a*3+2]-C[b*3+2]))<step;
+ const bg=new Uint8Array(w*h),queue:number[]=[];
+ for(let x=0;x<w;x++)queue.push(x,(h-1)*w+x);
+ for(let y=0;y<h;y++)queue.push(y*w,y*w+w-1);
+ for(const k of queue)bg[k]=1;
+ const around=(k:number)=>{const x=k%w,y=(k-x)/w;return [x>0?k-1:-1,x<w-1?k+1:-1,y>0?k-w:-1,y<h-1?k+w:-1];};
+ while(queue.length){const k=queue.pop()!;for(const n of around(k))if(n>=0&&!bg[n]&&near(k,n)){bg[n]=1;queue.push(n);}}
+ const seen=new Uint8Array(w*h);let best:{n:number;x0:number;y0:number;x1:number;y1:number}|undefined;
+ for(let k=0;k<w*h;k++){
+  if(bg[k]||seen[k])continue;
+  const c={n:0,x0:w,y0:h,x1:0,y1:0},stack=[k];seen[k]=1;
+  while(stack.length){const p=stack.pop()!,x=p%w,y=(p-x)/w;c.n++;if(x<c.x0)c.x0=x;if(x>c.x1)c.x1=x;if(y<c.y0)c.y0=y;if(y>c.y1)c.y1=y;for(const n of around(p))if(n>=0&&!bg[n]&&!seen[n]){seen[n]=1;stack.push(n);}}
+  if(!best||c.n>best.n)best=c;
+ }
+ if(!best)return;
+ const bw=best.x1-best.x0+1,bh=best.y1-best.y0+1,coverage=best.n/(w*h),fill=best.n/(bw*bh);
+ const bbox={x:best.x0/w,y:best.y0/h,width:bw/w,height:bh/h};
+ if(coverage<0.015||fill<0.3||bbox.width*bbox.height>0.8||edgeTouch(marginsFromBBox(bbox)).length>=3)return;
+ return {bbox,coverage,fill};
 }
 
 function marginsFromBBox(b:NormRect){
@@ -187,7 +225,11 @@ export function evaluateFramingQuality(
   search:opts.search||{x:0.005,y:0.005,width:0.99,height:0.99},
  });
 
- if(!profile||profile.geometry.confidence<0.28||profile.geometry.coverage<0.02){
+ // A full-frame luminance box (touching 3+ edges) is set planes merged into the product, not a product
+ // larger than the canvas; measure composed sets by border flood instead.
+ const lumaBox=profile?.geometry.bbox,lumaUsable=!!profile&&profile.geometry.confidence>=0.28&&profile.geometry.coverage>=0.02&&edgeTouch(marginsFromBBox(lumaBox!)).length<3&&!(lumaBox!.width>0.9&&lumaBox!.height>0.9);
+ const flood=lumaUsable?undefined:measureByBorderFlood(generatedBytes);
+ if(!lumaUsable&&!flood){
   // Full-product heroes cannot be auto-cleared when the product cannot be measured — treat as block.
   const severity=framingMode==='full-product'?'block':'warn';
   findings.push({
@@ -203,7 +245,9 @@ export function evaluateFramingQuality(
   };
  }
 
- const bbox=profile.geometry.bbox;
+ const bbox=flood?flood.bbox:profile!.geometry.bbox;
+ const confidence=flood?Math.min(0.6,0.35+flood.fill*0.3):profile!.geometry.confidence,coverage=flood?flood.coverage:profile!.geometry.coverage;
+ if(flood)notes.push('Composed set: product extent measured by border flood (luminance segmentation merged the set planes). Product size can be under-measured when its surfaces match the set; confirm visually.');
  const m=marginsFromBBox(bbox);
  const centroid={x:bbox.x+bbox.width/2,y:bbox.y+bbox.height/2};
  const touches=edgeTouch(m);
@@ -278,7 +322,7 @@ export function evaluateFramingQuality(
   const area=bbox.width*bbox.height;
   if(bbox.height<minProductHeight||area<minProductArea){
    findings.push({
-    code:'PRODUCT_TOO_SMALL',severity:'block',
+    code:'PRODUCT_TOO_SMALL',severity:flood?'warn':'block',
     message:`Product prominence is too small for a full-product hero (height ${(bbox.height*100).toFixed(0)}% / area ${(area*100).toFixed(1)}%; need ≥${(minProductHeight*100).toFixed(0)}% height and ≥${(minProductArea*100).toFixed(0)}% area). Framing margins alone do not make a postage-stamp product advertising-ready.`
    });
   }else if(bbox.height<minProductHeight+0.05||area<minProductArea+0.04){
@@ -302,10 +346,10 @@ export function evaluateFramingQuality(
   verdict,
   publishable:false,
   framingMode,
-  measured:{bbox,confidence:profile.geometry.confidence,coverage:profile.geometry.coverage,margins:m,centroid},
+  measured:{bbox,confidence,coverage,margins:m,centroid},
   intended:{productSafe:opts.productSafe,placementBias:opts.placementBias},
   findings,
-  method:'Pixel segmentation of delivered PNG via Product Identity Profile. Requested FLUX boxes are never accepted as framing proof.',
+  method:flood?'Border-flood segmentation of the delivered PNG (composed set). Requested FLUX boxes are never accepted as framing proof.':'Pixel segmentation of delivered PNG via Product Identity Profile. Requested FLUX boxes are never accepted as framing proof.',
   notes,
  };
 }

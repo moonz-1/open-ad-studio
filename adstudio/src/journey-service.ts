@@ -58,6 +58,16 @@ export class JourneyService {
  async choose(plan:CreativePlan,conceptId:string){const next=await this.app.choose(plan.id,conceptId);await this.save(j=>{const s=j.sources.find(s=>s.id===next.input.source.id)!;s.planId=next.id;delete s.review;});return next;}
  async refine(plan:CreativePlan,text:string){const next=await this.app.refine(plan.id,text);await this.save(j=>{const s=j.sources.find(s=>s.id===next.input.source.id)!;s.planId=next.id;s.draft=draftFor(this.app.store.active());delete s.review;});return next;}
  async review(plan:CreativePlan,confirmed:boolean){if(!confirmed)throw Error('Confirm the visible source facts and this direction.');await this.app.approve(plan.id,true);await this.save(j=>{const s=j.sources.find(s=>s.id===plan.input.source.id)!;s.review=reviewKey(plan);s.draft=draftFor(this.app.store.active());});}
+ /** Re-check a saved, blocked edition with the current product checks. No generation, no billing. */
+ async recheck(cardId:string){
+  const card=this.state().cards.find(c=>c.id===cardId);if(!card?.takeId)throw Error('This edition has no saved photograph to check.');
+  const r=await this.app.recheckSceneTake(card.takeId,card.planId),p=this.app.store.active();
+  if(!r.exported)return false;
+  const take=r.take,record=p.staticAds!.exports.slice().reverse().find(e=>e.assetId===take.assetId||e.design.photoId===take.assetId);
+  if(!record)throw Error('The photograph passed, but the advertisement could not be saved. Try again.');
+  await this.save(j=>{const c=j.cards.find(c=>c.id===cardId);if(c)Object.assign(c,{state:'ready',exportId:record.id,error:undefined,unsubmitted:undefined});});
+  return true;
+ }
  async plans(){return Promise.all(this.state().sources.map(s=>{if(!s.planId)throw Error('Develop a direction for each selected product.');return this.app.creative.open(this.app.store.active().id,s.planId);}));}
  async recover(){const j=this.state();if(j.cards.some(c=>!['ready','failed','cancelled'].includes(c.state)))await this.save(j=>{for(const c of j.cards)if(!['ready','failed','cancelled'].includes(c.state)){c.state='failed';c.error='This tab closed during the campaign. No job was resubmitted. Check saved results and the local queue before starting a new campaign.';}});}
  async cancel(){this.stopped=true;const p=this.app.store.active();if(p.attempt?.status==='running'&&(p.attempt.engine==='klein'||p.attempt.engine==='flux3'||p.attempt.engine==='flux3-cloud'))await this.app.cancelGeneration();}

@@ -70,4 +70,4 @@
 .toast-clock{color:var(--muted);font-variant-numeric:tabular-nums}
 @media(max-width:1000px){.discover-grid{grid-template-columns:1fr}.discover-brief{position:static;max-height:none;overflow:visible}}
 @media(max-width:640px){.brief-row{grid-template-columns:1fr;gap:6px}.image-use{flex-direction:column;align-items:stretch}.discover-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.discover-cards .image-select{height:150px}}
-.card-recovery{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.card-recovery{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.job-layer.is-held{justify-content:flex-end;background:linear-gradient(transparent 35%,#081c17f2 78%)}.job-layer.is-held>span{display:none}.card-diagnostics{flex-basis:100%;font-size:11px;color:var(--muted)}.card-diagnostics summary{cursor:pointer}.card-diagnostics p{margin:4px 0 0;font-family:ui-monospace,Consolas,monospace}

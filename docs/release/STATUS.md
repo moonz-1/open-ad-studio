@@ -1,6 +1,6 @@
 # Current release status
 
-The candidate passes production build/typecheck, CPU regression and a genuine fresh-browser Product-safe customer journey. Paid Cloud Journey acceptance remains unverified. It integrates committed Cursor source **`b4b7d092144ea972869ccf9ee4cbe25ea0907d01`** with the independently verified launcher, recovery, preview/export and contrast fixes. Uncommitted/private Cursor files are excluded.
+The candidate passes production build/typecheck, CPU regression and a genuine fresh-browser Product-safe customer journey. Paid Cloud Journey acceptance remains unverified. It integrates committed Cursor source **`1148062debfc89df2613be32e753c0ab5af3464f`** (including the earlier `b4b7d09` Cloud checkpoint) with the independently verified launcher, recovery, preview/export and contrast fixes. Uncommitted/private Cursor files are excluded.
 
 ## Capability boundaries
 
@@ -31,3 +31,9 @@ Declared CPU suite: **72 passed**, zero failed/skipped. Focused Cloud/hardening 
 A clean publication checkout installed packages and launched through `start.cmd`. A fresh browser completed the actual manual-upload UI, named the product, edited visible facts, confirmed image use, explicitly chose Basic planning and Product-safe generation, downloaded a real 1080x1350 PNG, and reloaded the saved result. No project-state seeding or model inference was used in that beginner acceptance. Server-only credential sentinels were absent from compiled frontend assets; private-route checks and final desktop/mobile smoke are recorded in the release evidence.
 
 The native default-browser handoff was invoked, but OS UI observation timed out; automatic opening is not claimed as visually verified. The printed URL and Chrome acceptance work. Node 22.18+ remains a separate prerequisite; the tested machine's global Node 22.14 correctly receives an upgrade message, while the audit uses Node 22.20.
+
+## Final framing follow-up
+
+Cursor's committed `1148062` adds composed-set segmentation, continuous-ground detection, an additional scene-lettering heuristic, plain-language blocked-photo guidance and an explicit saved-photo recheck. The recheck uploads the two already saved images to the local inspection endpoint; it submits no model job. All hard identity/framing/lettering findings still block export. Border-flood segmentation can under-measure same-colour product surfaces, so its size warning requires visual review; it is not proof of product identity or publishability. Cursor's subsequent uncommitted changes are excluded.
+
+The final framing follow-up passes typecheck and 42 focused CPU tests, including the preserved recovery/export/contrast regressions and new lettering/framing controls. This adds no live-inference claim.

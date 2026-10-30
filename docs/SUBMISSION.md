@@ -19,7 +19,7 @@ Opening: **"A good ad should begin with what makes your product real."**
 
 Generation may take longer than the allocated segment. Capture the real request and result, then use an explicit "elapsed time shortened" cut. A previously generated result must be called previously generated; never imply replayed progress is a new live run. Do not bypass identity gates to obtain an attractive closing frame. If Cloud acceptance remains blocked, record the working local/Product-safe path and name that engine; revise the model/category claims accordingly.
 
-Exact recording origin is the final accepted release's URL, normally `http://127.0.0.1:8341`. This staging audit uses `8343` only to avoid disturbing that server. Do not show the staging preview as the final Cloud build. All Journey stages above share `/adstudio/journey.html`; there are no invented separate planning or verification URLs.
+The definitive verified release preview is `http://127.0.0.1:8343/adstudio/journey.html`; `/api/release` reports its commit. The older server on 8341 is preserved and is not this release. A fresh installation prints its own selected port. This safe preview has paid inference disabled; configure and separately accept genuine model execution before recording a Cloud demonstration. All Journey stages above share `/adstudio/journey.html`; there are no invented separate planning or verification URLs.
 
 Three technical points, if space allows:
 

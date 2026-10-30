@@ -114,3 +114,23 @@ test('official packshot is fully framed (fixture)',async()=>{
  assert.notEqual(report.verdict,'FAIL');
  assert.ok(!report.findings.some(f=>f.code==='PRODUCT_CLIPPED'));
 });
+
+// Composed editorial set: two-tone wall + continuous floor. Luminance segmentation merges the planes into a
+// whole-frame box; the border flood must still find the product, and a floor that meets both frame edges
+// is ground, not a floating shelf.
+const composedSet=()=>png(`<svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
+ <rect width="400" height="300" fill="#d9cdb8"/><rect y="300" width="400" height="200" fill="#8a6a4c"/>
+ <ellipse cx="200" cy="372" rx="95" ry="10" fill="#3a2a1c" opacity="0.6"/>
+ <rect x="120" y="200" width="160" height="170" rx="10" fill="#2a1a10"/><rect x="150" y="170" width="100" height="36" rx="6" fill="#f1ece2"/>
+</svg>`);
+test('composed set with a continuous floor is not clipped or disconnected',()=>{
+ const report=evaluateFramingQuality(composedSet(),{framingMode:'full-product'});
+ assert.ok(!report.findings.some(f=>f.code==='PRODUCT_CLIPPED'),JSON.stringify(report.findings));
+ assert.ok(!report.findings.some(f=>f.code==='DISCONNECTED_SUPPORT'),JSON.stringify(report.findings));
+ assert.notEqual(report.verdict,'FAIL');
+ const b=report.measured?.bbox;assert.ok(b&&b.width<0.6&&b.height<0.6,'product box, not the whole frame: '+JSON.stringify(b));
+});
+test('synthetic shelf that stops short of the frame edges is still DISCONNECTED_SUPPORT',()=>{
+ const report=evaluateFramingQuality(fakeShelf(),{framingMode:'full-product'});
+ assert.ok(report.findings.some(f=>f.code==='DISCONNECTED_SUPPORT'||f.code==='PRODUCT_TOO_SMALL'));
+});

@@ -72,6 +72,12 @@ export function draftFor(p:AdProject):CreativeDraft {
  const sourceId=prior?.source.kind==='original'?prior.source.id:p.hero?.settings.originalId||p.assetId||(p.hero?.settings.sourceKind==='original'?p.hero.settings.sourceId:'')||'';
  return {sourceId,facts:prior?.source.id===sourceId?structuredClone(prior.facts):{description:'',arrangement:'',texture:'',container:'',confirmed:false},productType:prior?.source.id===sourceId?prior.productType:'other',request:'',intent:'campaign',format:'feed'};
 }
+function gateWarning(warning:string|undefined,identityVerify?:{verdict?:string},framingQuality?:{verdict?:string}){
+ let w=warning||'';
+ if(identityVerify?.verdict==='FAIL')w=(w?w+' ':'')+'Identity geometry gate FAIL — product proportions diverge from the reference. Not publishable until corrected.';
+ if(framingQuality?.verdict==='FAIL')w=(w?w+' ':'')+'Framing/composition gate FAIL — clipped, undersized, or disconnected product staging. Typography/fonts cannot repair this; regenerate an integrated photograph.';
+ return w;
+}
 export type Readiness=GenerationReadiness;
 export type WebsiteImage={image:string;requestedUrl:string;sourceUrl:string;contentType:string;sha256:string;association?:{key:string;sourceId:string;pageUrl:string;pageSha256:string;researchPageSha256:string;method:string}};
 export type AppClient=Pick<typeof OSH,'upload'|'staticAd'|'shot'|'exportVideo'|'audio'> & {creativeStatus?:typeof OSH.creativeStatus;inspectScene?:typeof OSH.inspectScene;adBackground?:typeof OSH.adBackground;adScene?:typeof OSH.adScene;adCampaign?:typeof OSH.adCampaign;cancelBackground?:typeof OSH.cancelBackground;capabilities:()=>Promise<Readiness>;research:(website:string)=>Promise<Parameters<typeof applyResearch>[1]>;analyze?:(key:string)=>Promise<Parameters<typeof applyResearch>[1]>;image?:(body:{url:string;productKey:string;research:NonNullable<BrandProfile['research']>})=>Promise<WebsiteImage>};
@@ -282,12 +288,7 @@ export class AdApplication {
   let warning=method==='creative-restage'
    ?(scene.warning||'Creative Restage · AI re-photographs the product. Packaging, labels and geometry may change. Compare with the original; not product-locked.')
    :(scene.warning||fidelity.reason);
-  if(identityVerify?.verdict==='FAIL'){
-   warning=(warning?warning+' ':'')+'Identity geometry gate FAIL — product proportions diverge from the reference. Not publishable until corrected.';
-  }
-  if(framingQuality?.verdict==='FAIL'){
-   warning=(warning?warning+' ':'')+'Framing/composition gate FAIL — clipped, undersized, or disconnected product staging. Typography/fonts cannot repair this; regenerate an integrated photograph.';
-  }
+  warning=gateWarning(warning,identityVerify,framingQuality);
   const take:HeroTake={id:crypto.randomUUID(),assetId:raw.id,url:scene.url,created:Date.now(),settings,sourceSha256:plan.input.source.sha256,originalSha256:plan.input.source.originalSha256,sha256:scene.sha256,method,model:scene.model,scene:{...scene,...inspection,assetId:raw.id,fidelityMode,warning,...(identityVerify?{identityVerify}:{}),...(framingQuality?{framingQuality}:{}),...(identity?{identityProfile:identity}:{})},adDesign:design,seconds:(Date.now()-started)/1000,jobId:scene.jobId,provenanceId:scene.provenanceId,workflowSha256:scene.workflowSha256};
   p.hero!.takes.push(take);p.hero!.activeId=take.id;p.hero!.approvedId=undefined;p.creative!.step='result';
   p.creative!.adDrafts??={};p.creative!.adDrafts[take.id]={headline:design.headline,body:design.body,cta:design.cta,size:design.size};
@@ -679,6 +680,21 @@ export class AdApplication {
   const r=await this.client.staticAd({design,photo:photo.url,logo:logoURL,support}),exported=await this.outputAsset(r.url,r.sha256,'Advertisement.png',r.width,r.height);
   p.staticAds!.exports.push({id:crypto.randomUUID(),assetId:exported.id,created:Date.now(),url:r.url,sha256:r.sha256,sources:r.sources,design});await this.store.projects.save(p,exported);return {...r,design,assetId:exported.id};
  }
+ /** Re-run the current product checks on a saved photograph. Never generates or bills. */
+ async recheckSceneTake(takeId:string,planId:string){return this.store.run('Checking the saved photograph again',async()=>{
+  const p=this.store.active(),take=p.hero?.takes.find(t=>t.id===takeId),entry=p.creative?.plans.find(e=>e.id===planId);
+  if(!take?.scene||!entry?.preparedId||!this.client.inspectScene)throw Error('This saved photograph cannot be checked again here. Open it from History.');
+  const plan=await this.creative.open(p.id,planId),source=await this.store.asset(plan.input.source.id),raw=await this.store.asset(take.assetId);
+  if(!source||await blobHash(source.normalized)!==take.sourceSha256)throw Error('Restore the original product photo first. No generation is needed.');
+  if(!raw||await blobHash(raw.original)!==take.sha256)throw Error('Restore the saved photograph first. No generation is needed.');
+  const image=await this.client.upload(await this.encode(source.normalized)),output=await this.client.upload(await this.encode(raw.original));
+  const inspection=await this.client.inspectScene({projectId:p.id,planId,preparedId:entry.preparedId,current:(await this.creative.context(p,source.id,plan.input)).input,image:image.url,output:output.url});
+  const base=String(take.scene.warning||'').split(/ (?=Identity geometry gate FAIL|Framing\/composition gate FAIL)/)[0];
+  take.scene={...take.scene,...inspection,assetId:take.assetId,warning:gateWarning(base,inspection.identityVerify,inspection.framingQuality)};
+  await this.store.projects.save(p);
+  if(sceneQualityBlocks(take.scene).length){this.store.notify('Checked again: this photograph still needs a new take before export.');return {take,exported:false};}
+  await this.composeSceneTake(take,{});return {take,exported:true};
+ });}
  async restoreTake(take:HeroTake){return this.store.run('Restoring the saved photograph',async()=>{const p=this.store.active(),existing=await this.store.asset(take.assetId),r=await fetch(take.url,{cache:'no-store'});if(!r.ok)throw Error('The local output file is also missing. Existing history was kept.');const raw=await r.blob();if(await blobHash(raw)!==take.sha256)throw Error('Local output checksum failed. History was not changed.');const bitmap=await createImageBitmap(raw);const asset={id:take.assetId,name:existing?.name||'Generated photograph.png',original:raw,normalized:raw,width:bitmap.width,height:bitmap.height,created:take.created};bitmap.close();await this.store.projects.save(p,asset);});}
  private async outputAsset(url:string,hash:string,name:string,width:number,height:number){if(!/^\/outputs\/[a-f0-9]{16}\.png$/.test(url))throw Error('Invalid output URL.');const r=await fetch(url);if(!r.ok)throw Error('The exported file is missing. Previous work was kept.');const blob=await r.blob();if(await blobHash(blob)!==hash)throw Error('Export checksum failed.');return {id:crypto.randomUUID(),name,original:blob,normalized:blob,width,height,created:Date.now()};}
 }
