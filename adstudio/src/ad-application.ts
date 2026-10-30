@@ -1,3 +1,4 @@
+import {framingNeedsManualReview} from '../../shared/lib/scene-framing-review.ts';
 import {assertSceneExportable,sceneQualityBlocks} from '../../shared/lib/scene-quality.ts';
 import {isDataImage} from '../../shared/lib/data-image.ts';
 import type {GraphicDirection} from '../../shared/lib/graphic-art-director.ts';
@@ -81,7 +82,7 @@ function gateWarning(warning:string|undefined,identityVerify?:{verdict?:string},
 }
 export type Readiness=GenerationReadiness;
 export type WebsiteImage={image:string;requestedUrl:string;sourceUrl:string;contentType:string;sha256:string;association?:{key:string;sourceId:string;pageUrl:string;pageSha256:string;researchPageSha256:string;method:string}};
-export type AppClient=Pick<typeof OSH,'upload'|'staticAd'|'shot'|'exportVideo'|'audio'> & {creativeStatus?:typeof OSH.creativeStatus;inspectScene?:typeof OSH.inspectScene;adBackground?:typeof OSH.adBackground;adScene?:typeof OSH.adScene;adCampaign?:typeof OSH.adCampaign;cancelBackground?:typeof OSH.cancelBackground;capabilities:()=>Promise<Readiness>;research:(website:string)=>Promise<Parameters<typeof applyResearch>[1]>;analyze?:(key:string)=>Promise<Parameters<typeof applyResearch>[1]>;image?:(body:{url:string;productKey:string;research:NonNullable<BrandProfile['research']>})=>Promise<WebsiteImage>};
+export type AppClient=Pick<typeof OSH,'upload'|'staticAd'|'shot'|'exportVideo'|'audio'> & {creativeStatus?:typeof OSH.creativeStatus;inspectScene?:typeof OSH.inspectScene;reviewSceneFraming?:typeof OSH.reviewSceneFraming;exportReviewedScene?:typeof OSH.exportReviewedScene;adBackground?:typeof OSH.adBackground;adScene?:typeof OSH.adScene;adCampaign?:typeof OSH.adCampaign;cancelBackground?:typeof OSH.cancelBackground;capabilities:()=>Promise<Readiness>;research:(website:string)=>Promise<Parameters<typeof applyResearch>[1]>;analyze?:(key:string)=>Promise<Parameters<typeof applyResearch>[1]>;image?:(body:{url:string;productKey:string;research:NonNullable<BrandProfile['research']>})=>Promise<WebsiteImage>};
 export const appClient:AppClient={...OSH,capabilities:async()=>{const r=await fetch('/api/hero/capabilities',{cache:'no-store',signal:AbortSignal.timeout(10000)});if(!r.ok)throw Error('The local generation service could not be reached.');const data=await r.json() as Readiness;return {...data,zimage:data.zimage||{available:!!data.reimagine,reason:data.reimagine?'Local Z-Image Turbo graph is available.':'Z-Image Turbo is not available on this ComfyUI (weights or graph nodes missing).'}};},research:async website=>{const r=await fetch('/api/brand/research',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({website,analyze:false,deferAnalysis:true})});const b=await r.json();if(!r.ok)throw Error(b.error||'Website research failed.');return b;},analyze:async key=>{const r=await fetch('/api/brand/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key}),signal:AbortSignal.timeout(240000)});const data=await r.json();if(!r.ok)throw Error(data.error||'Optional brand analysis failed. Website products are still available.');return data;},image:async body=>{const r=await fetch('/api/brand/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(45000)});const data=await r.json();if(!r.ok)throw Error(data.error||'Website photograph could not be imported. Upload a photograph instead.');return data;}};
 export class AdApplication {
  private websiteRevision=0;
@@ -664,14 +665,33 @@ export class AdApplication {
   const design={...newStaticDesign(brand,take.settings.productId).design,...copy,photoId:asset.id,photoConfirmed:true},photo=await this.client.upload(await this.encode(asset.original)),logo=design.logoId?await this.store.asset(design.logoId):undefined;if(design.logoId&&!logo)throw Error('Restore the saved original logo before exporting.');
   const logoURL=logo?(await this.client.upload(await this.encode(logo.normalized))).url:undefined,r=await this.client.staticAd({design,photo:photo.url,logo:logoURL});const exported=await this.outputAsset(r.url,r.sha256,'Advertisement.png',r.width,r.height);p.staticAds!.exports.push({id:crypto.randomUUID(),assetId:exported.id,created:Date.now(),url:r.url,sha256:r.sha256,sources:r.sources,design});await this.store.projects.save(p,exported);return {...r,design,assetId:exported.id};
  }
+ private async savedSceneProof(take:HeroTake,planId:string,uploadedOutput?:string){
+  const p=this.store.active(),entry=p.creative?.plans.find(e=>e.id===planId);if(!entry?.preparedId||!take.scene)throw Error('The saved scene review needs its original plan and receipt. No new generation is needed.');
+  const plan=await this.creative.open(p.id,planId),source=await this.store.asset(plan.input.source.id),raw=await this.store.asset(take.assetId);
+  if(!source||await blobHash(source.normalized)!==take.sourceSha256||await blobHash(source.original)!==take.originalSha256||take.originalSha256!==plan.input.source.originalSha256)throw Error('Restore the exact original reference before reviewing this photograph.');
+  if(!raw||await blobHash(raw.original)!==take.sha256)throw Error('Restore the unchanged saved photograph before review.');
+  const image=await this.client.upload(await this.encode(source.normalized)),output=uploadedOutput?{url:uploadedOutput}:await this.client.upload(await this.encode(raw.original));
+  return {projectId:p.id,planId,preparedId:entry.preparedId,current:(await this.creative.context(p,source.id,plan.input)).input,image:image.url,output:output.url};
+ }
+ async decideSceneFraming(takeId:string,planId:string,decision:'accept'|'reject',confirmed:boolean){return this.store.run('Saving your framing decision',async()=>{
+  const p=this.store.active(),take=p.hero?.takes.find(t=>t.id===takeId);if(!take?.scene||!this.client.reviewSceneFraming)throw Error('Saved photograph review is unavailable. Your images are retained.');
+  const proof=await this.savedSceneProof(take,planId),r=await this.client.reviewSceneFraming({...proof,decision,confirmed});
+  take.scene={...take.scene,...r.inspection,manualFramingReview:r.review};await this.store.projects.save(p);
+  if(decision==='reject')return {take,exported:false};
+  assertSceneExportable(take.scene);await this.composeSceneTake(take,copyFor(p,take));return {take,exported:true};
+ });}
  private async composeSceneTake(take:HeroTake,copy:CopyEdit){
   assertSceneExportable(take.scene);
   const p=this.store.active(),source=await this.store.asset(take.settings.sourceId),raw=await this.store.asset(take.assetId);
   if(!source||await blobHash(source.original)!==take.originalSha256||await blobHash(source.normalized)!==take.sourceSha256)throw Error('Restore the exact original reference before exporting.');
   if(!raw||await blobHash(raw.original)!==take.sha256||!take.adDesign?.campaign)throw Error('Restore the saved generated scene and campaign recipe. No regeneration is needed.');
   const design=applyCopyEdit({...take.adDesign,photoId:raw.id,photoConfirmed:true},copy),photo=await this.client.upload(await this.encode(raw.original)),logo=design.logoId?await this.store.asset(design.logoId):undefined;
-  if(design.logoId&&!logo)throw Error('Restore the original logo.');const r=await this.client.staticAd({design,photo:photo.url,logo:logo?(await this.client.upload(await this.encode(logo.normalized))).url:undefined}),exported=await this.outputAsset(r.url,r.sha256,'Campaign advertisement.png',r.width,r.height);
-  p.staticAds!.exports.push({id:crypto.randomUUID(),assetId:exported.id,created:Date.now(),url:r.url,sha256:r.sha256,sources:r.sources,design});await this.store.projects.save(p,exported);return {...r,design,assetId:exported.id};
+  if(design.logoId&&!logo)throw Error('Restore the original logo.');const logoURL=logo?(await this.client.upload(await this.encode(logo.normalized))).url:undefined;
+  let r:Awaited<ReturnType<typeof OSH.staticAd>>&{framingReviewId?:string};
+  if(framingNeedsManualReview(take.scene)){const review=take.scene!.manualFramingReview;if(!review||!this.client.exportReviewedScene)throw Error('Review the saved photograph before export.');r=await this.client.exportReviewedScene({...await this.savedSceneProof(take,review.planId,photo.url),reviewId:review.id,design,logo:logoURL});}
+  else r=await this.client.staticAd({design,photo:photo.url,logo:logoURL});
+  const exported=await this.outputAsset(r.url,r.sha256,'Campaign advertisement.png',r.width,r.height);
+  p.staticAds!.exports.push({id:crypto.randomUUID(),assetId:exported.id,created:Date.now(),url:r.url,sha256:r.sha256,sources:r.sources,design,...(r.framingReviewId?{framingReviewId:r.framingReviewId}:{})});await this.store.projects.save(p,exported);return {...r,design,assetId:exported.id};
  }
  private async composeOriginalTake(take:HeroTake,copy:CopyEdit,recipe?:StaticDesign){
   const p=this.store.active(),source=await this.store.asset(take.settings.sourceId),brand=this.store.getSnapshot().brands.find(b=>b.id===take.settings.brandId);
@@ -686,7 +706,7 @@ export class AdApplication {
   p.staticAds!.exports.push({id:crypto.randomUUID(),assetId:exported.id,created:Date.now(),url:r.url,sha256:r.sha256,sources:r.sources,design});await this.store.projects.save(p,exported);return {...r,design,assetId:exported.id};
  }
  /** Re-run the current product checks on a saved photograph. Never generates or bills. */
- async recheckSceneTake(takeId:string,planId:string){return this.store.run('Checking the saved photograph again',async()=>{
+ async recheckSceneTake(takeId:string,planId:string,compose=true){return this.store.run('Checking the saved photograph again',async()=>{
   const p=this.store.active(),take=p.hero?.takes.find(t=>t.id===takeId),entry=p.creative?.plans.find(e=>e.id===planId);
   if(!take?.scene||!entry?.preparedId||!this.client.inspectScene)throw Error('This saved photograph cannot be checked again here. Open it from History.');
   const plan=await this.creative.open(p.id,planId),source=await this.store.asset(plan.input.source.id),raw=await this.store.asset(take.assetId);
@@ -697,8 +717,9 @@ export class AdApplication {
   const base=String(take.scene.warning||'').split(/ (?=Identity geometry gate FAIL|Framing\/composition gate FAIL)/)[0];
   take.scene={...take.scene,...inspection,assetId:take.assetId,warning:gateWarning(base,inspection.identityVerify,inspection.framingQuality)};
   await this.store.projects.save(p);
-  if(sceneQualityBlocks(take.scene).length){this.store.notify('Checked again: this photograph still needs a new take before export.');return {take,exported:false};}
-  await this.composeSceneTake(take,{});return {take,exported:true};
+  if(sceneQualityBlocks(take.scene).length){this.store.notify(framingNeedsManualReview(take.scene)?'Framing could not be measured. Review the saved photo beside your original; no new generation is needed.':'Checked again: independent image defects still block export.');return {take,exported:false};}
+  if(!compose)return {take,exported:false};
+  await this.composeSceneTake(take,copyFor(p,take));return {take,exported:true};
  });}
  async restoreTake(take:HeroTake){return this.store.run('Restoring the saved photograph',async()=>{const p=this.store.active(),existing=await this.store.asset(take.assetId),r=await fetch(take.url,{cache:'no-store'});if(!r.ok)throw Error('The local output file is also missing. Existing history was kept.');const raw=await r.blob();if(await blobHash(raw)!==take.sha256)throw Error('Local output checksum failed. History was not changed.');const bitmap=await createImageBitmap(raw);const asset={id:take.assetId,name:existing?.name||'Generated photograph.png',original:raw,normalized:raw,width:bitmap.width,height:bitmap.height,created:take.created};bitmap.close();await this.store.projects.save(p,asset);});}
  private async outputAsset(url:string,hash:string,name:string,width:number,height:number){if(!/^\/outputs\/[a-f0-9]{16}\.png$/.test(url))throw Error('Invalid output URL.');const r=await fetch(url);if(!r.ok)throw Error('The exported file is missing. Previous work was kept.');const blob=await r.blob();if(await blobHash(blob)!==hash)throw Error('Export checksum failed.');return {id:crypto.randomUUID(),name,original:blob,normalized:blob,width,height,created:Date.now()};}

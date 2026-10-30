@@ -1,5 +1,12 @@
 # Current release status
 
+## Manual framing review repair (October 30)
+
+A product that cannot be segmented is now **UNSUPPORTED**, never an automatic PASS or a demonstrated defect. Export waits for an explicit side-by-side comparison and Accept/Reject decision. Each decision is bound to the normalized and original source hashes, delivered output hash, native job, plan/preparation IDs and current automatic report. Rejection, acceptance, edited copy and export survive reload. A newer rejection, changed image, stale report or wrong source invalidates an older approval. Independent clipping, identity, lettering and support blockers cannot be cleared by this framing decision.
+
+Headed Chrome acceptance over an isolated copy of a genuine saved Cloud photo passed review → rejection/reload → acceptance → edit → PNG → reload, with zero inference requests. The automatic report remained unverified. Eight focused free backend guards and 39 focused quality tests passed; the full regression run passed 82 tests with zero failures/skips. No new Cloud job was submitted for this repair. Human decisions in QA copies are not owner creative approval.
+
+
 The October 30 customer-experience rescue passes a genuine browser Journey: public website discovery, seasonal-product upload, editable brief, native local Qwen planning, three validated directions, one explicitly selected Comfy Cloud FLUX advertisement, Graphic Art Director edits, PNG download, persisted reload and a separate second campaign. Two sequential Cloud jobs were used, with output inspection between them and no automatic paid retries. The second photograph and finished PNG were visually reviewed separately. Private customer photographs, advertisements, browser databases and credentials are excluded from the public repository.
 
 ## Verified scope
@@ -15,7 +22,7 @@ Product geometry returned PASS_PENDING_OWNER. Both generated photographs have co
 
 The interrupted Cursor changes were preserved before integration. A shared bounded linear-time raster-data parser replaces full-image regex validation, enforces canonical base64/padding and PNG/JPEG/WebP restrictions, and retains decoded/encoded limits, SHA-256 checks and source authorization. A real multi-megabyte PNG passes the actual creative preparation endpoint; malformed, oversized and altered originals are rejected.
 
-Saved photographs were rechecked without inference. A continuous vignetted Abel tabletop had been falsely blocked as disconnected because edge brightness was treated as a physical boundary. The corrected check follows local colour continuity and retains finite-slab detection. Ambiguous contact measurements become explicit review warnings. Clipped, unmeasurable, mismatched and invented-lettering failures remain blocked. Only the evidenced tabletop false positive changed from FAIL to PASS in the eight-image saved-photo comparison.
+Saved photographs were rechecked without inference. A continuous vignetted Abel tabletop had been falsely blocked as disconnected because edge brightness was treated as a physical boundary. The corrected check follows local colour continuity and retains finite-slab detection. Ambiguous contact measurements become explicit review warnings. Clipped, mismatched and invented-lettering failures remain hard-blocked. Unmeasurable framing requires the recorded manual-review path described above. Only the evidenced tabletop false positive changed from FAIL to PASS in the eight-image saved-photo comparison.
 
 Preserved fixes include preview/export parity, typography contrast, readable punctuation, advanced-fact persistence, same-website new-campaign isolation, source-bound receipts, one active Cloud job and no automatic paid retry. A product-name field restoration defect found during production browser testing was also fixed and re-tested.
 

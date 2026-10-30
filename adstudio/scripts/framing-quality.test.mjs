@@ -31,12 +31,13 @@ test('postage-stamp product FAILs PRODUCT_TOO_SMALL',()=>{
  assert.ok(report.findings.some(f=>f.code==='PRODUCT_TOO_SMALL'&&f.severity==='block'));
 });
 
-test('unsegmentable full-product frame FAILs (cannot auto-approve)',()=>{
+test('unsegmentable full-product frame is UNSUPPORTED (manual scene gate must decide)',()=>{
  const blank=png(`<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#222"/></svg>`);
  const report=evaluateFramingQuality(blank,{framingMode:'full-product'});
- assert.equal(report.verdict,'FAIL');
- assert.ok(report.findings.some(f=>f.code==='WEAK_SEGMENTATION'&&f.severity==='block'));
- assert.equal(framingBlocksPublish(report),true);
+ assert.equal(report.verdict,'UNSUPPORTED');
+ assert.ok(report.findings.some(f=>f.code==='WEAK_SEGMENTATION'&&f.severity==='warn'));
+ assert.equal(report.publishable,false);
+ assert.equal(framingBlocksPublish(report),false);
 });
 
 test('intentional-closeup weak segmentation is soft UNSUPPORTED, not a hard FAIL',()=>{

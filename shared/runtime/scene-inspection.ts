@@ -1,4 +1,4 @@
-import {heroSource} from './hero-ad.ts';
+import {heroSha,heroSource} from './hero-ad.ts';
 import type {CreativePlan} from '../lib/creative-engine.ts';
 import {buildCompositionPlan} from '../lib/composition-dynamics.ts';
 import {buildProductIdentityProfile} from '../lib/product-identity-profile.ts';
@@ -14,5 +14,5 @@ export async function inspectScenePixels(outputs:string,plan:CreativePlan,image:
  const framingQuality=evaluateFramingQuality(raw.bytes,{productScale:dynamics.layout?.productScale,framingMode:dynamics.layout?.framingMode||'full-product',productSafe:dynamics.layout?.productSafe,placementBias:dynamics.layout?.placementBias,categoryHint:plan.input.productType,intentionalCropRequested:dynamics.layout?.framingMode==='intentional-closeup'});
  const openField=dynamics.layout?.copySafe||{x:0.54,y:0.05,width:0.4,height:0.28};
  const letteringScan=await scanPhotographLettering(raw.bytes,{openField,productSafe:dynamics.layout?.productSafe,measuredProduct:framingQuality.measured?.bbox});
- return {identityProfile,identityVerify,framingQuality,letteringScan,inspection:{method:'CPU pixel heuristics; not owner approval or inference proof',sourceSha256:source.sha256,outputSha256:raw.sha256},spatial};
+ return {identityProfile,identityVerify,framingQuality,letteringScan,inspection:{method:'CPU pixel heuristics; not owner approval or inference proof',sourceSha256:source.sha256,outputSha256:raw.sha256,framingReportSha256:heroSha(JSON.stringify(framingQuality))},spatial};
 }

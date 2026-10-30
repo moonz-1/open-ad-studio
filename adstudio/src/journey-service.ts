@@ -68,6 +68,13 @@ export class JourneyService {
   await this.save(j=>{const c=j.cards.find(c=>c.id===cardId);if(c)Object.assign(c,{state:'ready',exportId:record.id,error:undefined,unsubmitted:undefined});});
   return true;
  }
+ async decideFraming(cardId:string,decision:'accept'|'reject',confirmed:boolean){
+  const card=this.state().cards.find(c=>c.id===cardId);if(!card?.takeId)throw Error('Choose a saved photograph.');
+  const r=await this.app.decideSceneFraming(card.takeId,card.planId,decision,confirmed),p=this.app.store.active();
+  const record=r.exported?p.staticAds!.exports.slice().reverse().find(e=>e.design.photoId===r.take.assetId):undefined;
+  if(decision==='accept'&&!record)throw Error('Your decision is saved, but the advertisement export is missing. Check the saved photo again; no generation is needed.');
+  await this.save(j=>{const c=j.cards.find(c=>c.id===cardId);if(c)Object.assign(c,decision==='accept'?{state:'ready',exportId:record!.id,error:undefined,message:'Framing accepted after manual review — not automatically verified',unsubmitted:undefined}:{state:'failed',error:'You rejected this photograph. The original and raw result are saved. No new job was submitted.',message:undefined});});
+ }
  async plans(){return Promise.all(this.state().sources.map(s=>{if(!s.planId)throw Error('Develop a direction for each selected product.');return this.app.creative.open(this.app.store.active().id,s.planId);}));}
  async recover(){const j=this.state();if(j.cards.some(c=>!['ready','failed','cancelled'].includes(c.state)))await this.save(j=>{for(const c of j.cards)if(!['ready','failed','cancelled'].includes(c.state)){c.state='failed';c.error='This tab closed during the campaign. No job was resubmitted. Check saved results and the local queue before starting a new campaign.';}});}
  async cancel(){this.stopped=true;const p=this.app.store.active();if(p.attempt?.status==='running'&&(p.attempt.engine==='klein'||p.attempt.engine==='flux3'||p.attempt.engine==='flux3-cloud'))await this.app.cancelGeneration();}

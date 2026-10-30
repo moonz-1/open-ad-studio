@@ -1,3 +1,4 @@
+import {decideSavedSceneFraming,exportReviewedScene} from './scene-framing-review.ts';
 import {isBase64} from '../lib/data-image.ts';
 import {inspectScenePixels} from './scene-inspection.ts';
 import {verifyPlanningExecution,cancelOwnedPlanningJob} from './creative-proof.ts';
@@ -676,6 +677,8 @@ function middleware(env: Env,setup:RuntimeSetup,rewriter:PromptRewriter,creative
       if(route==='POST /api/creative/refine-composition')return send(res,200,await creative.refineComposition(await readBody(req)));
       if(route==='POST /api/creative/prepare')return send(res,200,await creative.prepare(await readBody(req,20*1024*1024)));
       if(route==='POST /api/creative/inspect-scene'){const body=await readBody(req,256*1024),checked=await validateBackgroundRequest(OUTPUTS,body);return send(res,200,await inspectScenePixels(OUTPUTS,checked.plan,body.image,body.output));}
+      if(route==='POST /api/creative/review-framing')return send(res,200,await decideSavedSceneFraming(OUTPUTS,await readBody(req,256*1024)));
+      if(route==='POST /api/creative/export-reviewed-scene')return send(res,200,await exportReviewedScene(OUTPUTS,await readBody(req,512*1024)));
       if(route==='POST /api/creative/compose')return send(res,200,await creative.compose(await readBody(req)));
       if(req.method==='GET'&&/^\/api\/hero\/qwen\/provenance\/[a-f0-9]{16}$/.test(url.pathname)){
        const path=join(OUTPUTS,'hero-qwen',url.pathname.split('/').pop()!,'provenance.json');if(!existsSync(path))return send(res,404,{error:'No saved Qwen provenance'});if(statSync(path).size>512*1024)throw new HttpError(413,'Qwen provenance too large');return send(res,200,JSON.parse(await readFile(path,'utf8')));

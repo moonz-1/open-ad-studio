@@ -61,7 +61,7 @@ export function reviewGeneratedCampaign(opts:{
  const geoBlock=opts.identityVerify?.findings.some(f=>f.severity==='block')||opts.identityVerify?.verdict==='FAIL';
  const frameBlock=opts.framingQuality?framingBlocksPublish(opts.framingQuality):false;
  const fatal=copyIssues.length>0||quality.grade==='basic-draft'||!!geoBlock||frameBlock;
- const conditional=!fatal&&(quality.grade==='usable'||productFidelity.length>1||opts.identityVerify?.verdict==='CONDITIONAL'||opts.framingQuality?.verdict==='CONDITIONAL');
+ const conditional=!fatal&&(quality.grade==='usable'||productFidelity.length>1||opts.identityVerify?.verdict==='CONDITIONAL'||(opts.framingQuality?.verdict==='CONDITIONAL'||opts.framingQuality?.verdict==='UNSUPPORTED'));
  return {
   approved:false, // never auto-approve commercial taste
   verdict:fatal?'NOT APPROVED':conditional?'CONDITIONAL':'APPROVED_PENDING_OWNER',

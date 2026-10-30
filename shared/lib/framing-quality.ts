@@ -247,15 +247,16 @@ export function evaluateFramingQuality(
  const lumaBox=profile?.geometry.bbox,lumaUsable=!!profile&&profile.geometry.confidence>=0.28&&profile.geometry.coverage>=0.02&&edgeTouch(marginsFromBBox(lumaBox!)).length<3&&!(lumaBox!.width>0.9&&lumaBox!.height>0.9);
  const flood=lumaUsable?undefined:measureByBorderFlood(generatedBytes);
  if(!lumaUsable&&!flood){
-  // Full-product heroes cannot be auto-cleared when the product cannot be measured — treat as block.
-  const severity=framingMode==='full-product'?'block':'warn';
+  // Measurement uncertainty is not an observed defect. Export still requires an explicit
+  // source/output-bound decision through the scene gate; this report never auto-verifies it.
+  const severity='warn' as const;
   findings.push({
    code:'WEAK_SEGMENTATION',severity:severity,
-   message:'Could not confidently segment the product in the generated image — framing must be reviewed visually; full-product heroes are not publishable without a measurable silhouette.'
+   message:'Framing could not be verified automatically because the product blends with its surroundings. Compare the complete product with the original and accept or reject the saved photograph.'
   });
   return {
    version:1,
-   verdict:severity==='block'?'FAIL':'UNSUPPORTED',
+   verdict:'UNSUPPORTED',
    publishable:false,framingMode,findings,
    method:'Deterministic luminance segmentation of the delivered PNG. Requested spatial boxes are not used as proof of framing.',
    notes:['Weak segmentation — do not auto-approve framing.']

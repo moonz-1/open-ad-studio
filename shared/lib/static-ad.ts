@@ -9,7 +9,7 @@ export type StaticConcept=typeof staticConcepts[number]['id'];
 export const staticSizes={feed:{width:1080,height:1350,label:'Feed · 4:5'},story:{width:1080,height:1920,label:'Story · 9:16'},square:{width:1080,height:1080,label:'Square · 1:1'}};
 export type StaticDesign={copyInternalTexts?:string[];copyEvidence?:string[];campaign?:{version:1;archetype:import('./ad-scene.ts').CampaignArchetype;presentation?:import('./ad-scene.ts').CampaignSurfacePresentation;graphic?:GraphicDirection};version:1;id:string;name:string;brandId:string;brandRevision:number;brandReviewed:boolean;productId?:string;photoId:string;photoConfirmed:boolean;logoId?:string;supportId?:string;supportGeneration?:{model:string;prompt:string;seed:number};concept:StaticConcept;size:keyof typeof staticSizes;brandName:string;productLine?:string;headline:string;body:string;cta:string;website:string;background:string;accent:string;textColor:string};
 export type StaticDraft={design:StaticDesign;history:HistoryTree<StaticDesign>};
-export type StaticExport={id:string;assetId:string;url:string;created:number;design:StaticDesign;sha256:string;sources:Record<string,string>};
+export type StaticExport={framingReviewId?:string;id:string;assetId:string;url:string;created:number;design:StaticDesign;sha256:string;sources:Record<string,string>};
 export type StaticWorkspace={version:1;activeId?:string;drafts:StaticDraft[];exports:StaticExport[]};
 export const emptyStaticAds=():StaticWorkspace=>({version:1,drafts:[],exports:[]});
 export function luminance(color:string){const a=color.slice(1).match(/../g)!.map(s=>parseInt(s,16)/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4);return a[0]*.2126+a[1]*.7152+a[2]*.0722;}
