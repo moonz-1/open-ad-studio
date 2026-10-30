@@ -26,6 +26,6 @@ The intended FLUX graph includes prompt upsampling. `ADSTUDIO_FLUX3_SKIP_PUP=1` 
 
 ## Evidence boundary
 
-CPU graph/reference/default-off tests and Product-safe browser/export/persistence acceptance pass. Cursor reported earlier genuine direct Cloud outputs; their existence does not establish a fresh integrated Journey click or current account compatibility. This audit performed **no paid Cloud or RunPod inference**. Do not label CPU fixtures, saved images or authored/Basic planning as new AI generation.
+The October 30 rescue completed two genuine browser Generate-click runs with native local Qwen planning and Comfy Cloud FLUX, followed by Graphic Art Director editing, PNG download and persisted reload. Native status confirmed both jobs succeeded; per-job charges were not exposed. This one-product acceptance does not establish universal quality or account compatibility. Framing warnings and owner review remain explicit. No RunPod inference was used. Do not label CPU fixtures, saved images or Basic planning as new AI generation.
 
-The owner records the final genuine demonstration only after successful accepted execution and product review. Experimental Cloud/LTX status must remain visible until that evidence exists. [Current source and release assessment](release/STATUS.md).
+The owner may record the accepted saved campaign, clearly describing saved results, or deliberately initiate a fresh run. LTX remains unverified; Cloud product/account boundaries remain visible. [Current source and release assessment](release/STATUS.md).

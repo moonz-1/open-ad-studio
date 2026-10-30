@@ -2,7 +2,7 @@
 
 ## 110-second recording sequence
 
-Record the final verified release, using an owner-authorized product photograph and website. Recommended first product: your own No Crumbs tiramisu-roll photograph. Enter `https://nocrumbsbakery.store/` for brand context, then upload that photograph manually: this variant is not a confirmed catalog listing. Never claim the upload was discovered in the catalog. This plan describes the intended Cloud demonstration, **not evidence that Cloud currently works**. Use the actual accepted release and record paid generation only after you separately authorize it. The source release can include experimental Cloud support without claiming successful paid Journey acceptance. Do not display private fragrance references, API keys, account billing, developer outputs or internal quality fixtures.
+Record the final verified release, using an owner-authorized product photograph and website. Recommended first product: your own No Crumbs tiramisu-roll photograph. Enter `https://nocrumbsbakery.store/` for brand context, then upload that photograph manually: this variant is not a confirmed catalog listing. Never claim the upload was discovered in the catalog. The October 30 rescue completed genuine local Qwen and two sequential Cloud FLUX browser runs, with edit/export/reload verification. Use the accepted saved campaign and clearly label a saved result, or deliberately start a fresh generation. The accepted product retains conditional framing warnings that require visual review. Do not display private fragrance references, API keys, account billing, developer outputs or internal quality fixtures.
 
 Opening: **"A good ad should begin with what makes your product real."**
 
@@ -19,7 +19,7 @@ Opening: **"A good ad should begin with what makes your product real."**
 
 Generation may take longer than the allocated segment. Capture the real request and result, then use an explicit "elapsed time shortened" cut. A previously generated result must be called previously generated; never imply replayed progress is a new live run. Do not bypass identity gates to obtain an attractive closing frame. If Cloud acceptance remains blocked, record the working local/Product-safe path and name that engine; revise the model/category claims accordingly.
 
-The definitive verified release preview is `http://127.0.0.1:8343/adstudio/journey.html`; `/api/release` reports its commit. The older server on 8341 is preserved and is not this release. A fresh installation prints its own selected port. This safe preview has paid inference disabled; configure and separately accept genuine model execution before recording a Cloud demonstration. All Journey stages above share `/adstudio/journey.html`; there are no invented separate planning or verification URLs.
+Use the exact URL printed by the current launcher and verify its commit at /api/release. The rescue preview on 8346 contains the accepted campaigns only in its separate test browser profile; do not assume they appear in another profile. All Journey stages share /adstudio/journey.html.
 
 Three technical points, if space allows:
 
@@ -54,7 +54,7 @@ The owner must personally accept all four attestations: public licensed repo, la
 
 ## Owner actions remaining
 
-1. For the intended Cloud recording, verify actual job/reference/weight evidence and reload/export acceptance. Authorize any paid inference separately; it was not performed by this release audit.
+1. Open the accepted campaign in its preserved test profile, compare the original and saved Cloud photograph, then record the edit/export flow. Generation details contains the native job ID. A saved result is a replay, not a new generation.
 2. Use rights-cleared demo media. The historical Field Study copyright concern is resolved by its documented Unsplash attribution; see the hardening follow-up.
 3. Verify the final public repository and release status after Codex completes its explicitly authorized safe publication. No additional owner approval is required for that scoped push.
 4. Record/host the truthful sub-two-minute demo, publish the hashtagged social post, then complete owner details/attestations and submit.

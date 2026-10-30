@@ -1,39 +1,44 @@
 # Current release status
 
-The candidate passes production build/typecheck, CPU regression and a genuine fresh-browser Product-safe customer journey. Paid Cloud Journey acceptance remains unverified. It integrates committed Cursor source **`1148062debfc89df2613be32e753c0ab5af3464f`** (including the earlier `b4b7d09` Cloud checkpoint) with the independently verified launcher, recovery, preview/export and contrast fixes. Uncommitted/private Cursor files are excluded.
+The October 30 customer-experience rescue passes a genuine browser Journey: public website discovery, seasonal-product upload, editable brief, native local Qwen planning, three validated directions, one explicitly selected Comfy Cloud FLUX advertisement, Graphic Art Director edits, PNG download, persisted reload and a separate second campaign. Two sequential Cloud jobs were used, with output inspection between them and no automatic paid retries. The second photograph and finished PNG were visually reviewed separately. Private customer photographs, advertisements, browser databases and credentials are excluded from the public repository.
 
-## Capability boundaries
+## Verified scope
 
-- **Verified without AI:** Product-safe original-photo composition, reviewed Basic directions, editable graphic/copy controls, PNG export and browser persistence. The independent hardening acceptance is recorded in [HARDENING.md](HARDENING.md).
-- **Local Qwen/Klein/FLUX:** model-dependent paths through the Comfy SDK and native ComfyUI workflows. This overnight audit does not perform fresh inference. AI, authored and Basic provenance remain distinct.
-- **Comfy Cloud / FLUX:** integrated **experimental** native adapter, default-off spending, server-side credentials and explicit selection. Earlier direct Cloud outputs were reported by Cursor; complete paid customer Generate-click acceptance is not certified here. CPU contracts do not replace it.
-- **RunPod:** optional experimental orchestration. No prepared GPU worker or new live run is implied.
-- **Video:** photograph-motion MP4 uses existing images and FFmpeg. Genuine LTX remains experimental/unverified.
+- **Product-safe:** clean-checkout Windows launcher, actual manual-upload/Basic browser flow, recoverable composition failure, PNG download and reload without Cloud credentials or model backends. Public clones start with spending disabled.
+- **Local Qwen:** native SDK/proxy/ComfyUI execution and job identity for text-only brand interpretation and three directions. Unsupported factual wording is removed or replaced using cited evidence, with raw responses and repairs retained. Photography decisions are compiled by the app; no visual understanding is claimed.
+- **Comfy Cloud / FLUX:** two real Generate-click runs for an owner-authorized four-roll tiramisu tray. Both native job-status reads returned succeeded. Reference hashes, native IDs, workflow and output provenance are retained privately. The complete prompt-upsampler path was enabled. This is one-product acceptance, not a guarantee for every account, model or product.
+- **Editing:** original, raw photograph, composed PNG and subsequent exports remain distinct. Product-name/headline/graphic controls survive reopening and reload. Generation details distinguish Cloud, local Klein and Product-safe; photograph-motion remains explicitly CPU animation.
 
-No subscription, GPU resource, model download or paid inference is part of this release audit. Public source does not contain API keys, `.env`, private photographs, generated ads or development databases. The only bundled screenshot is the actual empty interface.
+Product geometry returned PASS_PENDING_OWNER. Both generated photographs have conditional framing warnings (tight preferred margins / alternate crops / placement drift), not hard framing failures. The second photograph passed the lettering heuristic. Human inspection found all four rolls, the foil tray, readable separately typeset words, natural contact and no obvious new lettering or clipping. These checks do not certify exact pixel identity, unseen surfaces, taste, or owner approval. Do not auto-crop the result to another format.
 
-## Publication ownership
+## Fixes and safeguards
 
-The owner explicitly authorized Codex on **October 30, 2026** to publish a clean, technically verified release to **https://github.com/moonz-1/open-ad-studio**, preserving rollback and accurately limiting unverified capabilities. That authorization supersedes older instructions requiring another publication approval. It does not authorize paid inference, subscriptions, competition submission, owner attestations or publication of private media. Cursor must not perform the final push.
+The interrupted Cursor changes were preserved before integration. A shared bounded linear-time raster-data parser replaces full-image regex validation, enforces canonical base64/padding and PNG/JPEG/WebP restrictions, and retains decoded/encoded limits, SHA-256 checks and source authorization. A real multi-megabyte PNG passes the actual creative preparation endpoint; malformed, oversized and altered originals are rejected.
 
-Local rollback checkpoints preserve the published `3c922518` snapshot and independent hardening `55de3b8`. Only the reviewed public branch may be pushed; never push all refs, private audit ancestry or unrelated repositories.
+Saved photographs were rechecked without inference. A continuous vignetted Abel tabletop had been falsely blocked as disconnected because edge brightness was treated as a physical boundary. The corrected check follows local colour continuity and retains finite-slab detection. Ambiguous contact measurements become explicit review warnings. Clipped, unmeasurable, mismatched and invented-lettering failures remain blocked. Only the evidenced tabletop false positive changed from FAIL to PASS in the eight-image saved-photo comparison.
 
-## Install and demonstrate
+Preserved fixes include preview/export parity, typography contrast, readable punctuation, advanced-fact persistence, same-website new-campaign isolation, source-bound receipts, one active Cloud job and no automatic paid retry. A product-name field restoration defect found during production browser testing was also fixed and re-tested.
 
-Use [INSTALL.md](../INSTALL.md), [Connect AI](../CONNECT_AI.md) and the [110-second demo/social handoff](../SUBMISSION.md). The launcher prints the exact application address. Release-engineering preview: **http://127.0.0.1:8343/adstudio/journey.html** after the final verified build starts. `/api/release` identifies its exact commit and source hash; it is not the older RC process on another port.
+## Validation
 
-The owner records the demo, posts with `#OpenSourceHiggsfield` and completes [the entry form](https://form.typeform.com/to/V1dSQrkS) before **October 30, 2026, 9 AM Pacific / noon Eastern**. Do not imply new live Qwen/FLUX generation from saved results or CPU fixtures.
+- Production build and typecheck pass.
+- Full declared regression run: **77 passed, 0 failed, 0 skipped**.
+- Focused parser/Cloud/quality/graphic run: **57 passed, 0 failed, 0 skipped**. Counts overlap; they are not unique customer scenarios.
+- Actual Chrome desktop and 390px mobile Journey screenshots, downloads, source/output hashes, console checks and reload evidence are retained privately.
+- Browser fault simulations cover Qwen busy/cancel, planning timeout, missing Cloud configuration and composition failure/recovery; CPU contracts also cover native failure/no-retry, duplicate receipts, unsupported claims and source tampering. Simulations are not new provider inference.
+- Clean checkout installs packages and builds through start.cmd using Node 22.20; Node 22.18+ remains required. Global Node 22.14 correctly needs upgrading. No models or credentials are bundled.
+- Private environment, Git, diagnostic and runtime-source routes return 404 in production. Tracked-source/compiled-asset audits found no credential candidate, customer media, malformed UTF-8 or private machine path.
 
-## Measured candidate acceptance
+The Windows default-browser handoff was invoked and its browser window appeared by title; address-bar observation timed out waiting for computer-use app access. Printed-URL navigation and actual Chrome acceptance are verified. Native macOS/Linux launcher execution remains untested.
 
-Declared CPU suite: **72 passed**, zero failed/skipped. Focused Cloud/hardening suite: **76 passed**, zero failed/skipped. These overlapping counts are not unique scenario totals.
+## Remaining boundaries
 
-A clean publication checkout installed packages and launched through `start.cmd`. A fresh browser completed the actual manual-upload UI, named the product, edited visible facts, confirmed image use, explicitly chose Basic planning and Product-safe generation, downloaded a real 1080x1350 PNG, and reloaded the saved result. No project-state seeding or model inference was used in that beginner acceptance. Server-only credential sentinels were absent from compiled frontend assets; private-route checks and final desktop/mobile smoke are recorded in the release evidence.
+Cloud API status exposed execution/queue timings but **no per-job credit charge**. Successful execution is not a billing receipt; consult the account usage page. Historical repeated edition numbers are display/history labels, not billing identifiers: use native job IDs. Saved Abel receipts prove distinct native executions; exact owner-browser edition numbering was not exported in this audit.
 
-The native default-browser handoff was invoked, but OS UI observation timed out; automatic opening is not claimed as visually verified. The printed URL and Chrome acceptance work. Node 22.18+ remains a separate prerequisite; the tested machine's global Node 22.14 correctly receives an upgrade message, while the audit uses Node 22.20.
+Local Klein/FLUX variants, RunPod and genuine LTX video are not newly accepted by this rescue. FFmpeg is optional and was unavailable in the isolated final configuration. Automatic pixel checks remain heuristic and conditional review must stay visible. Nothing is submitted to the competition on the owner's behalf.
 
-## Final framing follow-up
+## Publication and recording
 
-Cursor's committed `1148062` adds composed-set segmentation, continuous-ground detection, an additional scene-lettering heuristic, plain-language blocked-photo guidance and an explicit saved-photo recheck. The recheck uploads the two already saved images to the local inspection endpoint; it submits no model job. All hard identity/framing/lettering findings still block export. Border-flood segmentation can under-measure same-colour product surfaces, so its size warning requires visual review; it is not proof of product identity or publishability. Cursor's subsequent uncommitted changes are excluded.
+The owner authorized integration and standalone publication, plus up to six additional existing-credit Cloud jobs. This rescue used two; no purchases, subscriptions, RunPod resources or models/dependencies were added. Ordinary generation remains owner-click initiated. Rollback preserves public 747b57a and the exact interrupted Cursor patch. The collaboration repository was not modified.
 
-The final framing follow-up passes typecheck and 42 focused CPU tests, including the preserved recovery/export/contrast regressions and new lettering/framing controls. This adds no live-inference claim.
+Use [installation](../INSTALL.md), [AI connection](../CONNECT_AI.md) and the [recording handoff](../SUBMISSION.md). Keep the same browser profile and origin for saved campaigns. The launcher prints its chosen loopback URL; /api/release identifies the exact running commit and compiled-source fingerprint. The owner records the truthful under-two-minute demo, posts the social link and personally completes the submission form before October 30, 2026, noon Eastern / 9 AM Pacific.

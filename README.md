@@ -8,6 +8,8 @@
 
 Bring a business website or your own product photograph. Review the evidence, choose a creative direction, create a campaign and finish it with editable typography. Your original product stays available for comparison.
 
+The [current release assessment](docs/release/STATUS.md) records genuine local Qwen → Comfy Cloud FLUX → edit/export/reload browser acceptance, clean Product-safe startup, and the remaining product-quality limits. Cloud credentials and spending stay disabled in public clones.
+
 ### What it does
 
 - Discovers products and brand evidence from accessible websites.
