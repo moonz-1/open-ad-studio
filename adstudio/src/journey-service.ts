@@ -12,7 +12,7 @@ export type JourneySource={id:string;name:string;draft:CreativeDraft;permission:
 export type JourneyCard={id:string;sourceId:string;planId:string;conceptId:string;title:string;state:'waiting'|'preparing'|'generating'|'composing'|'saving'|'ready'|'failed'|'cancelled';takeId?:string;exportId?:string;error?:string;message?:string;/** Failed before any generation job was created, so an intentional retry cannot bill twice. */unsubmitted?:boolean};
 export type JourneyState={planningMode?:'ai'|'basic';/** One explicit owner acknowledgment per campaign; never inferred from public availability. */imageUse?:{acknowledged:true;at:number};version:1;stage:number;sources:JourneySource[];quantity:number;cards:JourneyCard[];batchId?:string;introduction?:{website:string;name:string};format?:'static'|'video'};
 export const emptyJourney=():JourneyState=>({version:1,stage:1,sources:[],quantity:1,cards:[]});
-export function journeyFor(p:AdProject):JourneyState {const j=p.creative?.journey;if(!j)return emptyJourney();if(j.version!==1||!Array.isArray(j.sources)||!Array.isArray(j.cards)||!Number.isInteger(j.stage)||j.stage<1||j.stage>6)throw Error('Unsupported journey record. Your saved project has been kept.');const restored=structuredClone(j);restored.quantity=Math.max(Math.max(1,restored.sources.length),Math.min(restored.quantity,Math.min(6,Math.max(1,restored.sources.length)*3)));return restored;}
+export function journeyFor(p:AdProject):JourneyState {const j=p.creative?.journey;if(!j)return emptyJourney();if(j.version!==1||!Array.isArray(j.sources)||!Array.isArray(j.cards)||!Number.isInteger(j.stage)||j.stage<1||j.stage>6)throw Error('Unsupported journey record. Your saved project has been kept.');const restored=structuredClone(j);for(const c of restored.cards)if(c.state==='cancelled'&&!c.takeId&&c.message==='Not submitted after campaign stopped')c.unsubmitted=true;restored.quantity=Math.max(Math.max(1,restored.sources.length),Math.min(restored.quantity,Math.min(6,Math.max(1,restored.sources.length)*3)));return restored;}
 export const reviewKey=(plan:CreativePlan)=>creativeSnapshot(plan.input)+'\n'+JSON.stringify(plan.concepts)+'\n'+plan.selectedId;
 export function campaignQueue(sources:JourneySource[],plans:CreativePlan[],quantity:number):JourneyCard[]{
  if(!sources.length||!Number.isInteger(quantity)||quantity<sources.length||quantity>Math.min(6,sources.length*3))throw Error('Choose one to three directions per product, up to six advertisements.');
@@ -81,7 +81,7 @@ export class JourneyService {
  async run(engine:GenerationEngineId,approved:boolean,retryCardId?:string){
  if(this.running)throw Error('The campaign is already running.');if(!approved)throw Error('Review the listed directions before generating.');
  const retry=retryCardId?this.state().cards.find(c=>c.id===retryCardId):undefined;
- if(retryCardId&&!(retry?.state==='failed'&&retry.unsubmitted&&!retry.takeId))throw Error('Only an edition that stopped before submission can be retried here. Check saved history before generating again.');
+ if(retryCardId&&!((retry?.state==='failed'||retry?.state==='cancelled')&&retry.unsubmitted&&!retry.takeId))throw Error('Only an edition that stopped before submission can be retried here. Check saved history before generating again.');
  this.running=true;this.stopped=false;
  const projectId=this.app.store.active().id;let active:string|undefined,attemptMark:string|undefined;
  const progress=(event:Event)=>{const detail=(event as CustomEvent<{id:string;phase:string;message:string}>).detail,id=active,attempt=this.app.store.active().attempt;
@@ -120,7 +120,7 @@ export class JourneyService {
    if(!record)throw Error('Raw result saved; final advertisement export is missing. Open history instead of regenerating.');
    await patch(card.id,{state:'ready',exportId:record.id,message:chosen.label,planId:child.id});active=undefined;
   }
- }catch(error){const message=error instanceof Error?error.message:String(error),unsubmitted=this.app.store.active().attempt?.id===attemptMark;if(active)await patch(active,{state:this.stopped?'cancelled':'failed',error:message,...(unsubmitted?{unsubmitted:true}:{})}).catch(()=>{});await this.save(j=>{for(const c of j.cards)if(c.state==='waiting')Object.assign(c,{state:'cancelled',message:'Not submitted after campaign stopped'});}).catch(()=>{});throw error;
+ }catch(error){const message=error instanceof Error?error.message:String(error),unsubmitted=this.app.store.active().attempt?.id===attemptMark;if(active)await patch(active,{state:this.stopped?'cancelled':'failed',error:message,...(unsubmitted?{unsubmitted:true}:{})}).catch(()=>{});await this.save(j=>{for(const c of j.cards)if(c.state==='waiting')Object.assign(c,{state:'cancelled',message:'Not submitted after campaign stopped',unsubmitted:true});}).catch(()=>{});throw error;
  }finally{if(typeof window!=='undefined')window.removeEventListener('osh-generation-progress',progress);this.running=false;}
  }
 }

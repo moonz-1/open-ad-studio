@@ -2,7 +2,7 @@
 
 ## Product-aware photographic directions (October 30)
 
-**Candidate checkpoint, not production accepted.** The three-product acceptance is incomplete: fragrance plans are reviewable, but fresh bakery planning timed out. Keep the production recording baseline until this limitation is resolved.
+Paired Abel acceptance passed through the real headed Journey: two distinct source-grounded directions, two sequential native Cloud photographs, explicit framing review where needed, editable GAD copy, real PNG downloads and persisted reload. Green Cedar uses green cedar/stone; Double Scoop uses blush fabric/sculptural metal. This is actual photograph evidence, not prompt-only acceptance.
 
 The live Qwen contract previously forbade environment, lighting and camera prose, then compiled every proposal into three fixed studio scenes. The loss of specificity was upstream of FLUX. Strong earlier photographs used concrete authored set direction; their quality did not prove that the automatic planning path preserved it.
 
@@ -10,9 +10,11 @@ New AI plans fetch the selected product permalink through the existing safe publ
 
 Qwen proposes a cited interpretation, concrete setting/materials, lighting and palette. One exact citation serves both the advertising argument and scene. The app supplies distinct, complete-product placements and reference-supported camera treatments, honoring owner locks. The full scene contract survives Dynamics and FLUX compilation. Unsupported claim removal is recorded alongside the unchanged native response; physical contradictions still reject. GAD retains sole responsibility for advertising typography.
 
+Low-confidence border-flood margin findings that disagree with a closely reference-matched pixel extent are now unverified framing and require explicit review. The original findings are retained; this never becomes an automatic PASS. Confirmed clipping, mismatches, lettering and disconnected support remain blockers. Proven unsubmitted queued editions can be created explicitly without regenerating completed photos.
+
 Empty product links no longer crash detail-page parsing. Campaign quantity is restored to at least the selected-product count. Each reviewed source draft retains its own product evidence through generation preflight. No image-generation transport, source-image hash, Cloud receipt, framing-review decision or identity gate was replaced by this change.
 
-Local text work retains a 2,200-token ceiling, cancellation and no automatic retries, with the established 150-second execution deadline. Model speed and scene quality vary. Text planning does not inspect pixels; proposed scenery is not proof of a better generated photograph. This development pass submits no paid FLUX jobs. Fresh bakery scene-planning attempts on the local RTX 3080 did not finish within the bound; the saved, previously verified bakery campaign remains the recording path. Do not represent that recovered campaign as a fresh product-aware run.
+Local text work retains a 2,200-token ceiling, cancellation and no automatic retries, with the established 150-second execution deadline. Model speed and scene quality vary. Text planning does not inspect pixels; proposed scenery is not proof of a better generated photograph. This focused Abel acceptance used exactly two new Cloud jobs, one per product, without repeating a paid render. Original sources, raw outputs, native receipts and earlier exports remain intact. Fresh bakery scene-planning attempts on the local RTX 3080 did not finish within the bound; no further bakery retries were made. General source/evidence contracts are shared across products, but fresh planning reliability across all categories is not established.
 
 ## Manual framing review repair (October 30)
 

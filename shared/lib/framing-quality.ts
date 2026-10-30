@@ -39,6 +39,7 @@ export type FramingQualityReport={
   centroid:{x:number;y:number};
  };
  intended?:{productSafe?:NormRect;placementBias?:string};
+ measurementConflict?:{originalVerdict:string;originalFindings:FramingFinding[];originalNotes:string[];independentBbox:NormRect;reason:string};
  findings:FramingFinding[];
  method:string;
  notes:string[];
