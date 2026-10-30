@@ -632,7 +632,7 @@ export class AdApplication {
   if(!fidelityReviewed)throw Error('Compare the generated photograph with your original before exporting.');const originalSource=await this.checkSourceUse(take.settings.sourceId,take.settings.brandId,take.settings.productId);if(take.settings.briefDraft?.input.source.provenance&&!originalSource?.provenance)throw Error('Restore the original website source and its permission record before export.');const p=this.store.active();if(take.model==='klein-scene'||take.model==='flux3-klein-scene'||take.model==='klein-integrated'||take.model==='klein-harmonized')return this.composeSceneTake(take,copy);const entry=p.creative?.plans.find(e=>e.id===p.creative?.activeId&&e.preparedId&&p.hero!.settings.prompt===take.settings.prompt&&e.sourceId===take.settings.sourceId);
   if(entry){let plan:CreativePlan|undefined;try{plan=await this.creative.open(p.id,entry.id);}catch(e){if(!/missing|unreadable|not saved/i.test((e as Error).message))throw e;}
   if(plan&&planMatchesTake(plan,take)&&take.provenanceId){try{return await this.creative.exportAd(p.id,entry.id,take.id,true,copy);}catch(e){if(!/missing or unreadable|Hero provenance|Select a saved delivered/i.test((e as Error).message))throw e;}}
-  if(plan&&productSafeMatchesPlan(plan,take))return this.composeOriginalTake(take,copy,plan.composition);}
+  if(plan&&productSafeMatchesPlan(plan,take))return this.composeOriginalTake(take,copy,take.adDesign||plan.composition);}
   if(take.model==='product-safe'||take.model==='klein-background')return this.composeOriginalTake(take,copy);
   // Previously saved (pre-creative-engine) takes remain usable. Verify their raw
   // original bytes, then compose them with the existing deterministic exporter.
